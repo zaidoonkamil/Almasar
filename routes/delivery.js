@@ -6,6 +6,7 @@ const { Op } = require("sequelize");
 const upload = multer();
 const moment = require('moment');
 
+
 //  تغيير حالة الدلفري فعال او غير فعال
 router.put("/delivery/:id/status", async (req, res) => {
     const { isActive } = req.body;
@@ -43,24 +44,6 @@ router.put("/delivery/:id/status", async (req, res) => {
     } catch (err) {
         console.error("❌ Error updating delivery status:", err);
         res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-// جلب جميع الدلفري الفعال
-router.get("/deliveries/active", async (req, res) => {
-    try {
-      const activeDeliveries = await User.findAll({
-        where: {
-          role: "delivery",
-          isActive: true
-        },
-        attributes: { exclude: ['password', 'createdAt'] }
-      });
-  
-      res.status(200).json(activeDeliveries);
-    } catch (err) {
-      console.error("❌ Error fetching active deliveries:", err);
-      res.status(500).json({ error: "Internal Server Error" });
     }
 });
 

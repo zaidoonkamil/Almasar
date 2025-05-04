@@ -5,6 +5,7 @@ const adsRoutes = require("./routes/ads");
 const orderRoutes = require("./routes/order");
 const deliveryRoutes = require("./routes/delivery");
 const adminRoutes = require("./routes/admin");
+const locationRoutes = require("./routes/location");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -26,6 +27,7 @@ app.use("/", adsRoutes);
 app.use("/", orderRoutes);
 app.use("/", deliveryRoutes);
 app.use("/", adminRoutes);
+app.use("/", locationRoutes);
 
 
 io.on("connection", (socket) => {
