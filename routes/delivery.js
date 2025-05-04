@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Order, OrderStatusHistory, User } = require("../middlewares/associations");
+const DeliveryRating = require("../models/delivery_rating");
 const multer = require("multer");
 const { Op } = require("sequelize");
 const upload = multer();
@@ -86,6 +87,18 @@ router.get("/delivery/:id/dashboard", async (req, res) => {
         }
       });
       const totalAmountIncludingFee = totalOrderAmount + totalDeliveryFee;
+      const ratingStats = await DeliveryRating.findAll({
+        where: { deliveryId },
+        attributes: [
+          [DeliveryRating.sequelize.fn("AVG", DeliveryRating.sequelize.col("rating")), "avgRating"],
+          [DeliveryRating.sequelize.fn("COUNT", DeliveryRating.sequelize.col("id")), "totalRatings"]
+        ],
+        raw: true
+      });
+
+
+      const averageRating = Number(ratingStats[0].avgRating || 0).toFixed(2);
+      const totalRatings = ratingStats[0].totalRatings;
       res.status(200).json({
           message: "Number of orders assigned to delivery",
           orderCount: orderCount,
@@ -94,6 +107,8 @@ router.get("/delivery/:id/dashboard", async (req, res) => {
           deliveredOrderExchange: deliveredOrderExchange,
           deliveryFee: totalDeliveryFee,
           totalAmountIncludingFee: totalAmountIncludingFee,
+          averageRating,
+          totalRatings
       });
 
   } catch (err) {

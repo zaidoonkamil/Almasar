@@ -6,6 +6,7 @@ const orderRoutes = require("./routes/order");
 const deliveryRoutes = require("./routes/delivery");
 const adminRoutes = require("./routes/admin");
 const locationRoutes = require("./routes/location");
+const ratingRoutes = require("./routes/delivery_rating");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -28,6 +29,7 @@ app.use("/", orderRoutes);
 app.use("/", deliveryRoutes);
 app.use("/", adminRoutes);
 app.use("/", locationRoutes);
+app.use("/", ratingRoutes);
 
 
 io.on("connection", (socket) => {

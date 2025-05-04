@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Order, OrderStatusHistory, User } = require("../middlewares/associations");
+const DeliveryRating = require("../models/delivery_rating");
 const multer = require("multer");
 const upload = multer();
 
@@ -149,7 +150,8 @@ router.get("/orders", async (req, res) => {
         include: [
           { model: OrderStatusHistory, as: "statusHistory" },
           { model: User, as: "user" },
-          { model: User, as: "user", attributes: { exclude: ['password'] }}
+          { model: User, as: "user", attributes: { exclude: ['password'] }},
+          { model: DeliveryRating, as: "rating" } ,
         ],
         order: [["createdAt", "DESC"]]
       });
