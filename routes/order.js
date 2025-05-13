@@ -56,8 +56,13 @@ router.put("/order/:id/delivery-accept",upload.none(), async (req, res) => {
 router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
   const deliveryId = req.params.id;
 
+  // pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
   try {
-    const orders = await Order.findAll({
+    const { count, rows: orders } = await Order.findAndCountAll({
       where: {
         assignedDeliveryId: deliveryId
       },
@@ -71,15 +76,25 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
           model: OrderStatusHistory,
           as: "statusHistory"
         }
-      ]
+      ],
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]]
     });
 
-    res.json(orders);
+    res.json({
+      totalOrders: count,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+      orders
+    });
+
   } catch (err) {
     console.error("❌ Error fetching orders for delivery:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // جلب جميع الطلبات لدلفري معين الحالة الاولى
 router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
