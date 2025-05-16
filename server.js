@@ -38,5 +38,7 @@ io.on("connection", (socket) => {
 
 
 server.listen(3000, () => {
-    console.log("Server is running on port http://localhost:3000");
+    console.log("Server is running on port http://168.231.111.44:3000");
 });
+
+//ws://168.231.111.44:3000/socket.io/?EIO=4&transport=websocket

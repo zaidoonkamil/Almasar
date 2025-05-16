@@ -9,6 +9,8 @@ User.hasMany(Order, { foreignKey: "userId", as: "orders" });
 Order.hasMany(OrderStatusHistory, { foreignKey: "orderId", as: "statusHistory" });
 OrderStatusHistory.belongsTo(Order, { foreignKey: "orderId" });
 
+Order.belongsTo(User, { as: "delivery", foreignKey: "assignedDeliveryId" });
+
 Order.hasOne(DeliveryRating, { as: "rating", foreignKey: "orderId" });
 DeliveryRating.belongsTo(Order, { foreignKey: "orderId" });
 
