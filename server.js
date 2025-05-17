@@ -7,13 +7,20 @@ const deliveryRoutes = require("./routes/delivery");
 const adminRoutes = require("./routes/admin");
 const locationRoutes = require("./routes/location");
 const ratingRoutes = require("./routes/delivery_rating");
-const http = require("http");
+const https = require("http");
+const fs = require("fs");
 const { Server } = require("socket.io");
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*"}});
+
+const server = https.createServer({
+key: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/privkey.pem"),
+cert: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/fullchain.pem"),
+}, app);
+
+const io = new Server(server, { cors: { origin: "*" } });
 app.set("io", io);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("./" + "uploads"));
