@@ -7,7 +7,7 @@ const deliveryRoutes = require("./routes/delivery");
 const adminRoutes = require("./routes/admin");
 const locationRoutes = require("./routes/location");
 const ratingRoutes = require("./routes/delivery_rating");
-const https = require("http");
+const https = require("https");
 const fs = require("fs");
 const { Server } = require("socket.io");
 
@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
 
 
 server.listen(3000, () => {
-    console.log("Server is running on port http://168.231.111.44:3000");
+    console.log("Server is running on port https://168.231.111.44:3000");
 });
 
 //ws://168.231.111.44:3000/socket.io/?EIO=4&transport=websocket
