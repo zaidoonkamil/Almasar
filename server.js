@@ -18,7 +18,7 @@ key: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/
 cert: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/fullchain.pem"),
 }, app);
 
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { cors: { origin: "*" },allowEIO3: true });
 app.set("io", io);
 
 app.use(express.json());
