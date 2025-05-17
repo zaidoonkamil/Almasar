@@ -40,8 +40,43 @@ app.use("/", ratingRoutes);
 
 
 io.on("connection", (socket) => {
-    console.log("✔️ Client connected:", socket.id);
+  console.log("✔️ Client connected:", socket.id);
+
+  // الحصول على الـ deliveryId من query عند الاتصال
+  const deliveryId = socket.handshake.query.deliveryId;
+
+  if (deliveryId) {
+    socket.join(`deliveryRoom_${deliveryId}`);
+    console.log(`Socket ${socket.id} joined room deliveryRoom_${deliveryId}`);
+
+    // أرسل بيانات الطلبات لأول مرة عند الاتصال مثلاً:
+    Order.findAll({
+      where: {
+        assignedDeliveryId: deliveryId,
+        status: "تم الاستلام"
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "phone", "location"]
+        },
+        {
+          model: OrderStatusHistory,
+          as: "statusHistory"
+        }
+      ]
+    }).then(orders => {
+      socket.emit(`deliveryOrders_${deliveryId}`, orders);
+    }).catch(err => {
+      console.error("Error fetching orders:", err);
+    });
+
+  } else {
+    console.warn("No deliveryId provided by socket client");
+  }
 });
+
 
 
 server.listen(3000, () => {
