@@ -1,8 +1,8 @@
 {
   "development": {
-    "username": "root",
-    "password": "your_password_here",
-    "database": "your_database_name",
+    "username": "zaidoondbdelivery",
+    "password": "234.$.234",
+    "database": "databasedelivery",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },

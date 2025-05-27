@@ -2,8 +2,12 @@ const express = require("express");
 const router = express.Router();
 const { Order, OrderStatusHistory, User } = require("../middlewares/associations");
 const DeliveryRating = require("../models/delivery_rating");
+const Product = require("../models/product");
+const OrderItem = require("../models/orderitem");
 const multer = require("multer");
 const upload = multer();
+const { Op } = require("sequelize");
+
 
 // اسناد الطلب الى دلفري معين
 router.put("/order/:id/assign",upload.none(), async (req, res) => {
@@ -15,42 +19,50 @@ router.put("/order/:id/assign",upload.none(), async (req, res) => {
     order.assignedDeliveryId = deliveryId;
     await order.save();
   
-    const io = req.app.get("io");
-    io.emit("orderAssigned", {
-        orderId: order.id,
-        assignedDeliveryId: deliveryId
-    });
+  //  const io = req.app.get("io");
+    // io.emit("orderAssigned", {
+    //     orderId: order.id,
+    //     assignedDeliveryId: deliveryId
+    // });
 
     res.json({ message: "Order assigned to delivery", order });
 });
 
 // قبول او رفض الطلب من قبل الدلفري
-router.put("/order/:id/delivery-accept",upload.none(), async (req, res) => {
-  
-    const { accept, deliveryId } = req.body;
-    const order = await Order.findByPk(req.params.id);
-  
-    if (!order) return res.status(404).json({ error: "Order not found" });
-  
-    if (order.assignedDeliveryId !== parseInt(deliveryId)) {
-        return res.status(403).json({ error: "You are not assigned to this order" });
+router.put("/order/:id/delivery-accept", upload.none(), async (req, res) => {
+  const { accept, deliveryId, rejectionReason } = req.body;
+  const order = await Order.findByPk(req.params.id);
+
+  if (!order) return res.status(404).json({ error: "Order not found" });
+
+  if (order.assignedDeliveryId !== parseInt(deliveryId)) {
+    return res.status(403).json({ error: "You are not assigned to this order" });
+  }
+
+  const isAccepting = accept === "true" || accept === true;
+
+  if (isAccepting) {
+    // قبول الطلب
+    order.isAccepted = true;
+    // يظل assignedDeliveryId زي ما هو
+    await order.save();
+    res.json({ message: "Delivery accepted the order", order });
+  } else {
+    // رفض الطلب
+    if (!rejectionReason) {
+      return res.status(400).json({ error: "Rejection reason is required when refusing the order" });
     }
 
-    const io = req.app.get("io"); 
+    order.status = "تم الاستلام";
+    order.assignedDeliveryId = null;
+    order.isAccepted = false;
+    order.rejectionReason = rejectionReason;
+    await order.save();
 
-    if (accept) {
-      res.json({ message: "Delivery accepted the order", order });
-    } else {
-      order.status = "تم الاستلام";
-      order.assignedDeliveryId = null;
-      await order.save();
-      io.emit("orderRefusedByDelivery", {
-        orderId: order.id,
-        status: order.status
-      });
-      res.json({ message: "Delivery refused the order, status reset", order });
-    }
+    res.json({ message: "Delivery refused the order, status reset", order });
+  }
 });
+
 
 // جلب جميع الطلبات لدلفري معين
 router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
@@ -97,39 +109,25 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
 
 
 // جلب جميع الطلبات لدلفري معين الحالة الاولى
-router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
-  const deliveryId = req.params.id;
-  const io = req.app.get("io"); 
-
+router.get("/orders", async (req, res) => {
   try {
     const orders = await Order.findAll({
-      where: {
-        assignedDeliveryId: deliveryId,
-        status: "تم الاستلام"
-      },
       include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "name", "phone", "location"]
-        },
-        {
-          model: OrderStatusHistory,
-          as: "statusHistory"
-        }
-      ]
+        { model: OrderStatusHistory, as: "statusHistory" },
+        { model: User, as: "user", attributes: { exclude: ["password"] } },
+        { model: User, as: "delivery", attributes: { exclude: ["password"] } },
+        { model: DeliveryRating, as: "rating" }
+      ],
+      order: [["createdAt", "DESC"]]
     });
 
-    io.emit(`deliveryOrders_${deliveryId}`, orders);
-
-    res.json(orders);
+    res.status(200).json(orders);
 
   } catch (err) {
-    console.error("❌ Error fetching assigned orders:", err);
+    console.error("❌ Error fetching orders:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 
 router.post("/orders", upload.none(), async (req, res) => {
@@ -164,8 +162,8 @@ router.get("/orders", async (req, res) => {
       const orders = await Order.findAll({
         include: [
           { model: OrderStatusHistory, as: "statusHistory" },
-          { model: User, as: "user" },
           { model: User, as: "user", attributes: { exclude: ['password'] }},
+          { model: User, as: "assignedDelivery", attributes: { exclude: ["password"] } }, 
           { model: DeliveryRating, as: "rating" } ,
         ],
         order: [["createdAt", "DESC"]]
@@ -182,53 +180,53 @@ router.get("/orders", async (req, res) => {
 
 router.put("/orders/:id/status", upload.none(), async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, note } = req.body;
 
   try {
-      const validStatuses = ["تم الاستلام", "تم التسليم", "استرجاع الطلب", "تبديل الطلب"];
-      if (!validStatuses.includes(status)) {
-          return res.status(400).json({ error: "Invalid status value" });
+    const validStatuses = ["تم الاستلام", "تم التسليم", "استرجاع الطلب", "تبديل الطلب"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+
+    if (["استرجاع الطلب", "تبديل الطلب"].includes(status)) {
+      if (!note || note.trim() === "") {
+        return res.status(400).json({ error: "الملاحظة مطلوبة عند استرجاع أو تبديل الطلب" });
       }
+    }
 
-      const order = await Order.findByPk(id, {
-          include: [{ model: OrderStatusHistory, as: "statusHistory" }]
-      });
+    const order = await Order.findByPk(id, {
+      include: [{ model: OrderStatusHistory, as: "statusHistory" }]
+    });
 
-      if (!order) {
-          return res.status(404).json({ error: "Order not found" });
-      }
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
-      // حفظ قيمة assignedDeliveryId
-      const currentAssignedDeliveryId = order.assignedDeliveryId;
+    // فقط نحدث الحالة الحالية
+    order.status = status;
+    await order.save();
 
-      // تحديث الحالة
-      order.status = status;
+    // نسجل سجل الحالة مع الملاحظة (إن وجدت)
+    await OrderStatusHistory.create({
+      orderId: order.id,
+      status,
+      note: note || null
+    });
 
-      // التأكد من الحفاظ على قيمة assignedDeliveryId
-      order.assignedDeliveryId = currentAssignedDeliveryId;
+    // جلب الطلب مع السجل بعد التحديث
+    const updatedOrder = await Order.findByPk(id, {
+      include: [{ model: OrderStatusHistory, as: "statusHistory" }],
+      order: [[{ model: OrderStatusHistory, as: "statusHistory" }, "changeDate", "ASC"]]
+    });
 
-      await order.save();
-
-      // تسجيل سجل الحالة
-      await OrderStatusHistory.create({
-          orderId: order.id,
-          status: status
-      });
-
-      // جلب الطلب مع السجل بعد التحديث
-      const updatedOrder = await Order.findByPk(id, {
-          include: [{ model: OrderStatusHistory, as: "statusHistory" }],
-          order: [[{ model: OrderStatusHistory, as: "statusHistory" }, "changeDate", "ASC"]]
-      });
-
-      res.status(200).json({
-          message: "Order status updated successfully",
-          order: updatedOrder
-      });
+    res.status(200).json({
+      message: "تم تحديث حالة الطلب بنجاح",
+      order: updatedOrder
+    });
 
   } catch (err) {
-      console.error("❌ Error updating order status:", err);
-      res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Error updating order status:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -260,6 +258,109 @@ router.get("/orders/:userId", async (req, res) => {
         console.error("❌ Error fetching orders:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
+});
+
+// إنشاء مجموعة من الطلبات من تاجر
+router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
+  const { address, phone, notes, products, userId } = req.body;
+  const { vendorId } = req.params;
+
+  try {
+    // تحويل JSON string إلى Array لو جاي من form-data
+    const productList = typeof products === "string" ? JSON.parse(products) : products;
+
+    if (!productList || !productList.length) {
+      return res.status(400).json({ error: "يجب تحديد منتجات للطلب" });
+    }
+
+    // التحقق من وجود كل منتج للتاجر
+    const productRecords = await Product.findAll({
+      where: {
+        id: productList.map(p => p.productId),
+        vendorId
+      }
+    });
+
+    if (productRecords.length !== productList.length) {
+      return res.status(404).json({ error: "بعض المنتجات غير موجودة أو لا تنتمي للتاجر" });
+    }
+
+    // حساب إجمالي السعر
+    let totalAmount = 0;
+    productRecords.forEach(prod => {
+      const quantity = productList.find(p => p.productId == prod.id).quantity || 1;
+      totalAmount += prod.price * quantity;
+    });
+
+    // إنشاء الطلب
+    const order = await Order.create({
+      userId,
+      vendorId,
+      address,
+      phone,
+      orderAmount: totalAmount,
+      deliveryFee: 0,
+      notes
+    });
+
+    // ربط المنتجات بالطلب (نفترض عندك جدول OrderItems)
+    for (const p of productList) {
+      await OrderItem.create({
+        orderId: order.id,
+        productId: p.productId,
+        quantity: p.quantity || 1
+      });
+    }
+
+    // حفظ الحالة الأولية
+    await OrderStatusHistory.create({
+      orderId: order.id,
+      status: order.status
+    });
+
+    res.status(201).json(order);
+
+  } catch (err) {
+    console.error("❌ Error creating multi-product order:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+router.get("/vendor/:vendorId/orders", async (req, res) => {
+  const { vendorId } = req.params;
+  try {
+    // الحصول على الطلبات
+    const orders = await Order.findAll({
+      where: { vendorId },
+      include: [
+        {
+          model: OrderItem,
+          include: [
+            {
+              model: Product,
+              attributes: ['id', 'title', 'price', 'images']
+            }
+          ]
+        },
+        {
+          model: User,
+          attributes: ['id', 'name', 'phone']
+        },
+        {
+          model: OrderStatusHistory,
+          limit: 1,
+          order: [['createdAt', 'DESC']]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error("❌ Error fetching vendor orders:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 

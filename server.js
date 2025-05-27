@@ -7,26 +7,29 @@ const deliveryRoutes = require("./routes/delivery");
 const adminRoutes = require("./routes/admin");
 const locationRoutes = require("./routes/location");
 const ratingRoutes = require("./routes/delivery_rating");
+const productsRoutes = require("./routes/products");
+
 const https = require("https");
 const fs = require("fs");
 const { Server } = require("socket.io");
 
 const app = express();
 
+/*
 const server = https.createServer({
 key: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/privkey.pem"),
 cert: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/fullchain.pem"),
 }, app);
 
 
-const io = new Server(server, { cors: { origin: "*" },allowEIO3: true });
-app.set("io", io);
+const io = new Server(server, { cors: { origin: "*" }});
+app.set("io", io);*/
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("./" + "uploads"));
 
-sequelize.sync({ force: false })
+sequelize.sync({ alter: true }) 
     .then(() => console.log("✅ Database & User table synced!"))
     .catch(err => console.error("❌ Error syncing database:", err));
 
@@ -38,15 +41,15 @@ app.use("/", deliveryRoutes);
 app.use("/", adminRoutes);
 app.use("/", locationRoutes);
 app.use("/", ratingRoutes);
+app.use("/", productsRoutes);
 
-
+/*
 io.on("connection", (socket) => {
     console.log("✔️ Client connected:", socket.id);
-});
+});*/
 
 
-server.listen(3000, () => {
+app.listen(3000, () => {
     console.log("Server is running on port https://168.231.111.44:3000");
 });
 
-//ws://168.231.111.44:3000/socket.io/?EIO=4&transport=websocket

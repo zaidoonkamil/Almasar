@@ -7,13 +7,13 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
 const multer = require("multer");
-const upload = multer();
+const upload = require("../middlewares/uploads");
 
 const generateToken = (user) => {
     return jwt.sign(
         { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '5d' } 
+        { expiresIn: '356d' } 
     );
 };
 
@@ -28,11 +28,29 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-router.post("/users", upload.none() ,async (req, res) => {
+router.get("/verify-token", (req, res) => {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.json({ valid: false, message: "Token is missing" });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.json({ valid: false, message: "Invalid token" });
+    }
+
+    // التوكن صالح
+    return res.json({ valid: true, data: decoded });
+  });
+});
+
+router.post("/users", upload.array("images",5),async (req, res) => {
     const { name, phone , location ,password , role = 'user'} = req.body;
-    
+
     try {
         const existingUser = await User.findOne({ where: { phone } });
+        const images = req.files.map(file => file.filename);
 
         if (existingUser) {
             return res.status(400).json({ error: "Phone already in use" });
@@ -43,7 +61,7 @@ router.post("/users", upload.none() ,async (req, res) => {
         }
     
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        const user = await User.create({ name, phone, location, password: hashedPassword, role });
+        const user = await User.create({ name, phone, location, password: hashedPassword, role, images });
 
         res.status(201).json({
         id: user.id,
@@ -51,6 +69,7 @@ router.post("/users", upload.none() ,async (req, res) => {
         phone: user.phone,
         location: user.location,
         role: role,
+        images: images,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
      });
@@ -85,6 +104,7 @@ router.post("/login", upload.none() ,async (req, res) => {
             name: user.name,
             phone: user.phone,
             location: user.location,
+            images: user.images,
             role: user.role,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
@@ -110,11 +130,13 @@ router.get("/users", async (req, res) => {
 
 router.get("/profile", authenticateToken, async (req, res) => {
     try {
-        // جلب بيانات المستخدم بناءً على الـ id الموجود في الـ token
-        const user = await User.findByPk(req.user.id);
-        if (!user) {
+        const user = await User.findByPk(req.user.id, {
+             attributes: { exclude: ["password"] }  
+        });       
+         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
+
         res.status(200).json(user);
     } catch (err) {
         console.error("Error fetching user:", err);
@@ -126,13 +148,14 @@ router.get("/profile", authenticateToken, async (req, res) => {
 router.get("/users/:id", authenticateToken ,async (req,res)=>{
     const {id} = req.params;
 
-    // التحقق من أن المستخدم الذي يحاول الوصول إلى البيانات هو نفس المستخدم الذي يتم جلب بياناته
     if (req.user.id !== parseInt(id)) {
         return res.status(403).json({ error: "Access denied, you are not authorized to view this user's data" });
     }
 
     try{
-        const user = await User.findByPk(id);
+        const user = await User.findByPk(req.user.id, {
+             attributes: { exclude: ["password"] }  
+        });
         if(!user){
             return res.status(404).json({error:"User not found"});
         }
@@ -204,6 +227,39 @@ router.get("/usersAdmin", async (req, res) => {
         console.error("❌ Error fetching admin users:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
+});
+
+
+router.get("/usersvendor", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await User.findAndCountAll({
+      where: { role: "vendor" },
+      attributes: { exclude: ['password'] },
+      limit: limit,
+      offset: offset,
+      order: [["createdAt", "DESC"]]
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
+      data: rows,
+      pagination: {
+        totalItems: count,
+        totalPages: totalPages,
+        currentPage: page
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Error fetching vendor users:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 

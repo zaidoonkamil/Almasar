@@ -11,6 +11,14 @@ const Order = sequelize.define("Order", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    vendorId: {
+       type: DataTypes.INTEGER,
+       allowNull: true 
+    },
+     productId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
     assignedDeliveryId: {      
         type: DataTypes.INTEGER,
         allowNull: true
@@ -40,6 +48,15 @@ const Order = sequelize.define("Order", {
         allowNull: false,
         defaultValue: "تم الاستلام"
     },
+    isAccepted: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: null
+    },
+    rejectionReason: {
+       type: DataTypes.TEXT,
+       allowNull: true
+    },
+    
 }, {
     timestamps: true,
 });

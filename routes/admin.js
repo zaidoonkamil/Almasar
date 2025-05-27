@@ -39,28 +39,41 @@ router.get("/admin/all-orders", async (req, res) => {
 });
 
 
-
 router.get("/admin/order-pending", async (req, res) => {
-    try {
-      const orders = await Order.findAll({
-        where: {
-          status: {
-            [Op.in]: ["تم الاستلام"]
-          }
+  try {
+    const orders = await Order.findAll({
+      where: {
+        status: {
+          [Op.in]: ["تم الاستلام"]
+        }
+      },
+      include: [
+        {
+          model: OrderStatusHistory,
+          as: "statusHistory",
+          include: [
+            {
+              model: Driver,  // موديل الدلفري
+              as: "driver",   // حسب تعريف العلاقة
+              attributes: ['id', 'name', 'phone'] // الحقول اللي تبيها
+            }
+          ],
+          where: {
+            status: "مرفوض"  // أو الحالة التي تعني رفض الطلب
+          },
+          required: false   // حتى تجلب الطلبات حتى لو ما فيها رفض
         },
-        include: [
-          { model: OrderStatusHistory, as: "statusHistory" },
-          { model: User, as: "user", attributes: { exclude: ['password'] } }
-        ],
-        order: [["createdAt", "DESC"]]
-      });
-  
-      res.status(200).json(orders);
-  
-    } catch (err) {
-      console.error("❌ Error fetching selected orders:", err);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
+        { model: User, as: "user", attributes: { exclude: ['password'] } }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
+
+    res.status(200).json(orders);
+
+  } catch (err) {
+    console.error("❌ Error fetching selected orders:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
   

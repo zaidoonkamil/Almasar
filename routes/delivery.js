@@ -28,12 +28,12 @@ router.put("/delivery/:id/status", async (req, res) => {
 
         const updatedAtLocal = moment.utc(deliveryUser.updatedAt).local().format('YYYY-MM-DD HH:mm:ss');
 
-        const io = req.app.get("io");
-        io.emit("deliveryStatusUpdated", {
-          id: deliveryUser.id,
-          isActive: deliveryUser.isActive,
-          updatedAt: updatedAtLocal
-        });
+      //  const io = req.app.get("io");
+        // io.emit("deliveryStatusUpdated", {
+        //   id: deliveryUser.id,
+        //   isActive: deliveryUser.isActive,
+        //   updatedAt: updatedAtLocal
+        // });
 
         res.status(200).json({
             message: "Delivery status updated",

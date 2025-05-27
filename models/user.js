@@ -27,9 +27,17 @@ const User = sequelize.define("User", {
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
-    },    
+    },
+    images: {
+      type: DataTypes.JSON,
+      allowNull: true
+    },
+    sponsorshipAmount: {
+     type: DataTypes.FLOAT,
+     defaultValue: 0 
+    },
     role: {
-        type: DataTypes.ENUM("user", "admin", "delivery"), 
+        type: DataTypes.ENUM("user",  "vendor", "admin", "delivery"), 
         allowNull: false,
         defaultValue: "user",
     }
