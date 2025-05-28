@@ -50,8 +50,10 @@ router.post("/users", upload.array("images",5),async (req, res) => {
 
     try {
         const existingUser = await User.findOne({ where: { phone } });
-        const images = req.files.map(file => file.filename);
-
+        let images = [];
+        if (role === 'vendor') {
+         images = req.files?.map(file => file.filename) || [];
+        }
         if (existingUser) {
             return res.status(400).json({ error: "Phone already in use" });
         }
