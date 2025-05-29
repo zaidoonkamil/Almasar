@@ -170,7 +170,7 @@ router.post("/cart", upload.none(), async (req, res) => {
     const newCartItem = await Cart.create({ 
       userId, 
       productId, 
-      quantity: quantity || 1  // لو ما أرسل عدد، نخليه 1
+      quantity: quantity || 1  
     });
 
     res.status(201).json(newCartItem);
