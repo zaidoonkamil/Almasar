@@ -19,7 +19,8 @@ const Cart = sequelize.define("cart", {
   },
    quantity: {
     type: DataTypes.INTEGER,
-    defaultValue: 1,
+      allowNull: false,
+     defaultValue: 1,
   }
 }, {
   timestamps: true
@@ -29,5 +30,6 @@ Cart.belongsTo(User, { foreignKey: 'userId' });
 Cart.belongsTo(Product, { foreignKey: 'productId' });
 User.hasMany(Cart, { foreignKey: 'userId' });
 Product.hasMany(Cart, { foreignKey: 'productId' });
+Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
 
 module.exports = Cart;

@@ -155,6 +155,7 @@ router.post("/cart", upload.none(), async (req, res) => {
       where: { userId },
       include: {
         model: Product,
+        as: 'product',
         attributes: ['id', 'vendorId']
       }
     });
