@@ -17,6 +17,10 @@ const Cart = sequelize.define("cart", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+   quantity: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  }
 }, {
   timestamps: true
 });

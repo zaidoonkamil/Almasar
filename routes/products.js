@@ -136,7 +136,7 @@ router.put("/vendor/:vendorId/sponsorship", upload.none(), async (req, res) => {
 
 router.post("/cart", upload.none(), async (req, res) => {
   try {
-    const { userId, productId } = req.body;
+    const { userId, productId, quantity } = req.body;
 
     const product = await Product.findByPk(productId);
     if (!product) {
@@ -167,7 +167,12 @@ router.post("/cart", upload.none(), async (req, res) => {
       }
     }
 
-    const newCartItem = await Cart.create({ userId, productId });
+    const newCartItem = await Cart.create({ 
+      userId, 
+      productId, 
+      quantity: quantity || 1  // لو ما أرسل عدد، نخليه 1
+    });
+
     res.status(201).json(newCartItem);
 
   } catch (err) {
