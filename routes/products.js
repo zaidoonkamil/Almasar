@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/product");
+const Cart = require("../models/cart");
 const User = require("../models/user");
 const upload = require("../middlewares/uploads");
 const { Op } = require("sequelize");
@@ -130,6 +131,84 @@ router.put("/vendor/:vendorId/sponsorship", upload.none(), async (req, res) => {
   } catch (err) {
     console.error("❌ Error updating sponsorship amount:", err);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/cart", upload.none(), async (req, res) => {
+  try {
+    const { userId, productId } = req.body;
+
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ error: "المنتج غير موجود" });
+    }
+
+    const existingItem = await Cart.findOne({
+      where: { userId, productId },
+    });
+
+    if (existingItem) {
+      return res.status(400).json({ error: "المنتج موجود بالفعل في السلة" });
+    }
+
+    const cartItems = await Cart.findAll({
+      where: { userId },
+      include: {
+        model: Product,
+        attributes: ['id', 'vendorId']
+      }
+    });
+
+    if (cartItems.length > 0) {
+      const vendorIdInCart = cartItems[0].product.vendorId;
+
+      if (vendorIdInCart !== product.vendorId) {
+        return res.status(400).json({ error: "لا يمكن إضافة منتجات من تجار مختلفين في نفس السلة" });
+      }
+    }
+
+    const newCartItem = await Cart.create({ userId, productId });
+    res.status(201).json(newCartItem);
+
+  } catch (err) {
+    console.error("Error adding to cart:", err);
+    res.status(500).json({ error: "خطأ أثناء الإضافة للسلة" });
+  }
+});
+
+
+router.get("/cart/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const cartItems = await Cart.findAll({
+      where: { userId },
+      include: {
+        model: Product
+      }
+    });
+
+    res.status(200).json(cartItems);
+  } catch (err) {
+    console.error("Error fetching cart:", err);
+    res.status(500).json({ error: "خطأ أثناء جلب السلة" });
+  }
+});
+
+router.delete("/cart/:cartItemId", async (req, res) => {
+  try {
+    const { cartItemId } = req.params;
+
+    const deleted = await Cart.destroy({ where: { id: cartItemId } });
+
+    if (!deleted) {
+      return res.status(404).json({ error: "العنصر غير موجود" });
+    }
+
+    res.status(200).json({ message: "تم الحذف من السلة" });
+  } catch (err) {
+    console.error("Error deleting cart item:", err);
+    res.status(500).json({ error: "خطأ أثناء الحذف من السلة" });
   }
 });
 
