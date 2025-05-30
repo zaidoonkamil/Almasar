@@ -364,8 +364,8 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     const { count, rows: orders } = await Order.findAndCountAll({
       where: {
         [Op.or]: [
-          { vendorId: vendorId }, 
-          { userId: vendorId }  
+          { vendorId: vendorId },
+          { userId: vendorId }
         ]
       },
       include: [
@@ -381,12 +381,12 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
         },
         {
           model: User,
-          as: "user", 
+          as: "user",
           attributes: ["id", "name", "phone"]
         },
         {
           model: OrderStatusHistory,
-          as: "statusHistory", 
+          as: "statusHistory",
           limit: 1,
           order: [["createdAt", "DESC"]]
         }
@@ -397,7 +397,7 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = order.OrderItems.length > 0 ? order.OrderItems : null;
+      const items = Array.isArray(order.items) && order.items.length > 0 ? order.items : null;
       return { ...order.toJSON(), items };
     });
 
@@ -413,6 +413,7 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 
