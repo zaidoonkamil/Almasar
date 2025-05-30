@@ -353,36 +353,58 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
 });
 
 
+// جلب الطلبات الخاصة بتاجر معين (الطلبات الموجهة للتاجر أو التي أنشأها بنفسه)
 router.get("/vendor/:vendorId/orders", async (req, res) => {
   const { vendorId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
   try {
-    // الحصول على الطلبات
-    const orders = await Order.findAll({
-      where: { vendorId },
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where: {
+        [Op.or]: [
+          { vendorId: vendorId }, 
+          { userId: vendorId }  
+        ]
+      },
       include: [
         {
           model: OrderItem,
           include: [
             {
               model: Product,
-              attributes: ['id', 'title', 'price', 'images']
+              attributes: ["id", "title", "price", "images"]
             }
           ]
         },
         {
           model: User,
-          attributes: ['id', 'name', 'phone']
+          attributes: ["id", "name", "phone"]
         },
         {
           model: OrderStatusHistory,
           limit: 1,
-          order: [['createdAt', 'DESC']]
+          order: [["createdAt", "DESC"]]
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset
     });
 
-    res.status(200).json(orders);
+    const formattedOrders = orders.map(order => {
+      const items = order.OrderItems.length > 0 ? order.OrderItems : null;
+      return { ...order.toJSON(), items };
+    });
+
+    res.status(200).json({
+      totalOrders: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      orders: formattedOrders
+    });
+
   } catch (err) {
     console.error("❌ Error fetching vendor orders:", err);
     res.status(500).json({ error: "Internal Server Error" });
