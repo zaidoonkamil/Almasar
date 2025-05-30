@@ -58,11 +58,13 @@ router.get("/admin/all-orders", async (req, res) => {
 router.get("/admin/order-pending", async (req, res) => {
   try {
     const orders = await Order.findAll({
-      where: {
-        status: {
-          [Op.in]: ["تم الاستلام"]
-        }
-      },
+  where: {
+    status: "تم الاستلام",
+    [Op.or]: [
+      { assignedDeliveryId: null },
+      { assignedDeliveryId: 0 }
+    ]
+  },
       include: [
         {
           model: OrderStatusHistory,
