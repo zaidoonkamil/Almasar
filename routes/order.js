@@ -341,6 +341,8 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
       status: order.status
     });
 
+    await Cart.destroy({ where: { userId } });
+
     res.status(201).json(order);
 
   } catch (err) {
