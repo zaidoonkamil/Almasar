@@ -69,7 +69,6 @@ router.put("/order/:id/delivery-accept", upload.none(), async (req, res) => {
 router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
   const deliveryId = req.params.id;
 
-  // pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
@@ -81,25 +80,46 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
       },
       include: [
         {
-          model: User,
-          as: "user",
-          attributes: ["id", "name", "phone"]
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
         },
         {
           model: OrderStatusHistory,
-          as: "statusHistory"
+          as: "statusHistory",
+          order: [["createdAt", "DESC"]]
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ['password'] }
+        },
+        {
+          model: User,
+          as: "delivery",
+          attributes: ["id", "name", "phone", "location", "createdAt"]
         }
       ],
+      order: [["createdAt", "DESC"]],
       limit,
-      offset,
-      order: [["createdAt", "DESC"]]
+      offset
     });
 
-    res.json({
+    const formattedOrders = orders.map(order => {
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
+
+    res.status(200).json({
       totalOrders: count,
-      currentPage: page,
       totalPages: Math.ceil(count / limit),
-      orders
+      currentPage: page,
+      orders: formattedOrders
     });
 
   } catch (err) {
@@ -107,6 +127,7 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 // جلب جميع الطلبات لدلفري معين الحالة الاولى
