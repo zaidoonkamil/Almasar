@@ -233,32 +233,55 @@ router.put("/orders/:id/status", upload.none(), async (req, res) => {
 
 
 router.get("/orders/:userId", async (req, res) => {
-    const { userId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
-    try {
-        const { count, rows: orders } = await Order.findAndCountAll({
-            where: { userId },
-            include: [{ model: OrderStatusHistory, as: "statusHistory" }],
-            order: [["createdAt", "DESC"]],
-            limit,
-            offset
-        });
+  try {
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where: { userId },
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
+        },
+        {
+          model: OrderStatusHistory,
+          as: "statusHistory",
+          order: [['createdAt', 'DESC']]
+        }
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset
+    });
 
-        res.status(200).json({
-            totalOrders: count,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-            orders
-        });
+    // لو الطلب بدون منتجات — نرجع items: null بدل []
+    const formattedOrders = orders.map(order => {
+      const items = order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
 
-    } catch (err) {
-        console.error("❌ Error fetching orders:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
+    res.status(200).json({
+      totalOrders: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      orders: formattedOrders
+    });
+
+  } catch (err) {
+    console.error("❌ Error fetching user orders:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
+
 
 // إنشاء مجموعة من الطلبات من تاجر
 router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {

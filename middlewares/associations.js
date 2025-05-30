@@ -31,6 +31,8 @@ OrderItem.belongsTo(Order, { foreignKey: 'orderId', onDelete: "CASCADE" });
 // order item ↔ product
 OrderItem.belongsTo(Product, { foreignKey: 'productId', onDelete: "CASCADE" });
 
+Order.hasMany(OrderItem, { as: "items", foreignKey: "orderId" });
+OrderItem.belongsTo(Product, { foreignKey: "productId" });
 
 module.exports = {
   User,
