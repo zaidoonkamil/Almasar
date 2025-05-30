@@ -371,6 +371,7 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
       include: [
         {
           model: OrderItem,
+          as: "items",
           include: [
             {
               model: Product,
@@ -380,10 +381,12 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
         },
         {
           model: User,
+          as: "user", 
           attributes: ["id", "name", "phone"]
         },
         {
           model: OrderStatusHistory,
+          as: "statusHistory", 
           limit: 1,
           order: [["createdAt", "DESC"]]
         }
