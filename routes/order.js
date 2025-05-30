@@ -158,27 +158,6 @@ router.post("/orders", upload.none(), async (req, res) => {
 });
 
 
-router.get("/orders", async (req, res) => {
-    try {
-      const orders = await Order.findAll({
-        include: [
-          { model: OrderStatusHistory, as: "statusHistory" },
-          { model: User, as: "user", attributes: { exclude: ['password'] }},
-          { model: User, as: "assignedDelivery", attributes: { exclude: ["password"] } }, 
-          { model: DeliveryRating, as: "rating" } ,
-        ],
-        order: [["createdAt", "DESC"]]
-      });
-  
-      res.status(200).json(orders);
-  
-    } catch (err) {
-      console.error("❌ Error fetching orders:", err);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-
 router.put("/orders/:id/status", upload.none(), async (req, res) => {
   const { id } = req.params;
   const { status, note } = req.body;
@@ -364,8 +343,8 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     const { count, rows: orders } = await Order.findAndCountAll({
       where: {
         [Op.or]: [
-          { vendorId: vendorId },
-          { userId: vendorId }
+          { vendorId: vendorId }, 
+          { userId: vendorId }  
         ]
       },
       include: [
@@ -381,12 +360,12 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
         },
         {
           model: User,
-          as: "user",
+          as: "user", 
           attributes: ["id", "name", "phone"]
         },
         {
           model: OrderStatusHistory,
-          as: "statusHistory",
+          as: "statusHistory", 
           limit: 1,
           order: [["createdAt", "DESC"]]
         }
@@ -397,7 +376,7 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = Array.isArray(order.items) && order.items.length > 0 ? order.items : null;
+      const items = order.OrderItems.length > 0 ? order.OrderItems : null;
       return { ...order.toJSON(), items };
     });
 
@@ -413,7 +392,6 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 
 

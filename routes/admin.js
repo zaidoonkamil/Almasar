@@ -15,21 +15,36 @@ router.get("/admin/all-orders", async (req, res) => {
 
     const { count, rows: orders } = await Order.findAndCountAll({
       include: [
-        { model: OrderStatusHistory, as: "statusHistory" },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
+        },
+        { model: OrderStatusHistory, as: "statusHistory", order: [["createdAt", "DESC"]] },
         { model: User, as: "user", attributes: { exclude: ['password'] } },
-        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] } 
-
+        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
       order: [["createdAt", "DESC"]],
       limit,
       offset
     });
 
+    // لو الطلب بدون منتجات — نرجع items: null بدل []
+    const formattedOrders = orders.map(order => {
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
+
     res.status(200).json({
       totalOrders: count,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
-      orders
+      orders: formattedOrders
     });
 
   } catch (err) {
