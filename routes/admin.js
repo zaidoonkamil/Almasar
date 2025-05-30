@@ -36,7 +36,6 @@ router.get("/admin/all-orders", async (req, res) => {
       offset
     });
 
-    // لو الطلب بدون منتجات — نرجع items: null بدل []
     const formattedOrders = orders.map(order => {
       const items = order.items && order.items.length > 0 ? order.items : null;
       return { ...order.toJSON(), items };
@@ -68,24 +67,33 @@ router.get("/admin/order-pending", async (req, res) => {
         {
           model: OrderStatusHistory,
           as: "statusHistory",
+          where: {
+            status: "مرفوض"
+          },
+          required: false
+        },
+        {
+          model: OrderItem,
+          as: "items",
           include: [
             {
-              model: Driver,  // موديل الدلفري
-              as: "driver",   // حسب تعريف العلاقة
-              attributes: ['id', 'name', 'phone'] // الحقول اللي تبيها
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
             }
-          ],
-          where: {
-            status: "مرفوض"  // أو الحالة التي تعني رفض الطلب
-          },
-          required: false   // حتى تجلب الطلبات حتى لو ما فيها رفض
+          ]
         },
-        { model: User, as: "user", attributes: { exclude: ['password'] } }
+        { model: User, as: "user", attributes: { exclude: ['password'] } },
+        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
       order: [["createdAt", "DESC"]]
     });
 
-    res.status(200).json(orders);
+    const formattedOrders = orders.map(order => {
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
+
+    res.status(200).json(formattedOrders);
 
   } catch (err) {
     console.error("❌ Error fetching selected orders:", err);
