@@ -128,22 +128,48 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
   }
 });
 
-
-
 // جلب جميع الطلبات لدلفري معين الحالة الاولى
-router.get("/orders", async (req, res) => {
+router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
+  const deliveryId = req.params.id;
+
   try {
     const orders = await Order.findAll({
+      where: {
+        assignedDeliveryId: deliveryId,
+        status: "تم الاستلام"
+      },
       include: [
-        { model: OrderStatusHistory, as: "statusHistory" },
+        {
+          model: OrderStatusHistory,
+          as: "statusHistory",
+          where: {
+            status: "مرفوض"
+          },
+          required: false
+        },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
+        },
         { model: User, as: "user", attributes: { exclude: ["password"] } },
-        { model: User, as: "delivery", attributes: { exclude: ["password"] } },
+        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] },
         { model: DeliveryRating, as: "rating" }
       ],
       order: [["createdAt", "DESC"]]
     });
 
-    res.status(200).json(orders);
+    const formattedOrders = orders.map(order => {
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
+
+    res.status(200).json(formattedOrders);
 
   } catch (err) {
     console.error("❌ Error fetching orders:", err);
