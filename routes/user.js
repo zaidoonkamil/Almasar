@@ -231,38 +231,22 @@ router.get("/usersAdmin", async (req, res) => {
     }
 });
 
-
 router.get("/usersvendor", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await User.findAndCountAll({
+    const vendors = await User.findAll({
       where: { role: "vendor" },
       attributes: { exclude: ['password'] },
-      limit: limit,
-      offset: offset,
       order: [["createdAt", "DESC"]]
     });
 
-    const totalPages = Math.ceil(count / limit);
-
-    res.status(200).json({
-      data: rows,
-      pagination: {
-        totalItems: count,
-        totalPages: totalPages,
-        currentPage: page
-      }
-    });
+    res.status(200).json(vendors);
 
   } catch (err) {
     console.error("❌ Error fetching vendor users:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 module.exports = router;
