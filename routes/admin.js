@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { Order, OrderStatusHistory, User } = require("../middlewares/associations");
+const Product = require("../models/product");
+const OrderItem = require("../models/orderitem");
 const multer = require("multer");
 const upload = multer();
 const moment = require('moment');
