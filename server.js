@@ -8,6 +8,7 @@ const adminRoutes = require("./routes/admin");
 const locationRoutes = require("./routes/location");
 const ratingRoutes = require("./routes/delivery_rating");
 const productsRoutes = require("./routes/products");
+const notifications = require("./routes/notifications");
 
 const https = require("https");
 const fs = require("fs");
@@ -42,6 +43,7 @@ app.use("/", adminRoutes);
 app.use("/", locationRoutes);
 app.use("/", ratingRoutes);
 app.use("/", productsRoutes);
+app.use("/", notifications);
 
 /*
 io.on("connection", (socket) => {
