@@ -44,26 +44,30 @@ router.post('/send-notification', upload.none(), (req, res) => {
     res.json({ success: true, message: '✅ Notification sent to all devices!' });
 });
 
-router.post('/send-notification-to-users', upload.none(), async (req, res) => {
-  const { title, message } = req.body;
+router.post('/send-notification-to-role', upload.none(), async (req, res) => {
+  const { title, message, role } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'message مطلوب' });
   }
 
+  if (!role) {
+    return res.status(400).json({ error: 'role مطلوب' });
+  }
+
   try {
-    // جلب الأجهزة المرتبطة بالمستخدمين اللي رولهم "user"
+    // جلب الأجهزة المرتبطة بالمستخدمين حسب الدور المطلوب
     const devices = await UserDevice.findAll({
       include: [{
         model: User,
-        where: { role: 'user' }
+        where: { role: role }
       }]
     });
 
     const playerIds = devices.map(device => device.player_id);
 
     if (playerIds.length === 0) {
-      return res.status(404).json({ error: 'لا توجد أجهزة للمستخدمين' });
+      return res.status(404).json({ error: `لا توجد أجهزة للمستخدمين برول ${role}` });
     }
 
     const url = 'https://onesignal.com/api/v1/notifications';
@@ -80,13 +84,14 @@ router.post('/send-notification-to-users', upload.none(), async (req, res) => {
 
     await axios.post(url, data, { headers });
 
-    return res.json({ success: true, message: 'تم إرسال الإشعار لجميع المستخدمين برول user' });
+    return res.json({ success: true, message: `تم إرسال الإشعار لجميع المستخدمين برول ${role}` });
 
   } catch (error) {
-    console.error('❌ Error sending notification to users:', error.response ? error.response.data : error.message);
+    console.error(`❌ Error sending notification to role ${role}:`, error.response ? error.response.data : error.message);
     return res.status(500).json({ error: 'حدث خطأ أثناء إرسال الإشعار' });
   }
 });
+
 
 
 module.exports = router;
