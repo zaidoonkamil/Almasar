@@ -20,13 +20,7 @@ router.put("/order/:id/assign",upload.none(), async (req, res) => {
   
     order.assignedDeliveryId = deliveryId;
     await order.save();
-  
-  //  const io = req.app.get("io");
-    // io.emit("orderAssigned", {
-    //     orderId: order.id,
-    //     assignedDeliveryId: deliveryId
-    // });
-
+    await sendNotificationToUser(deliveryId, 'لديك طلب جديد قم بمراجعته ', "طلب جديد");
     res.json({ message: "Order assigned to delivery", order });
 });
 
