@@ -243,8 +243,14 @@ router.put("/orders/:id/status", upload.none(), async (req, res) => {
     });
 
     if (status === "تم التسليم") {
+      if (order.vendorId) {
+        await sendNotificationToUser(order.vendorId, `تم تسليم طلب رقم ${order.id}`, "تحديث الطلب");
+      }
       await sendNotificationToUser(order.userId, "تم تسليم طلبك بنجاح", "تحديث الطلب");
     } else if (["استرجاع الطلب", "تبديل الطلب"].includes(status)) {
+      if (order.vendorId) {
+        await sendNotificationToUser(order.vendorId, `تم تحديث حالة طلب رقم ${order.id} إلى: ${status}`, "تحديث الطلب");
+      }
       await sendNotificationToUser(order.userId, `تم تحديث حالة طلبك: ${status}`, "تحديث الطلب");
       await sendNotificationToRole("admin", `طلب رقم ${order.id} بحالة: ${status}`, "تنبيه طلب");
     }
