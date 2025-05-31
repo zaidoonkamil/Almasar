@@ -6,6 +6,7 @@ const multer = require("multer");
 const upload = multer();
 const UserDevice = require("../models/user_device");
 const User = require("../models/user");
+const axios = require('axios');
 
 
 router.post("/register-device", async (req, res) => {
