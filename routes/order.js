@@ -8,7 +8,7 @@ const multer = require("multer");
 const upload = multer();
 const { Op } = require("sequelize");
 const Cart = require("../models/cart");
-const { sendNotificationToRole , sendNotificationToUser } = require("../services/notifications");
+const { sendNotificationToRole , sendNotificationToUser , sendNotificationToRole } = require("../services/notifications");
 
 
 // اسناد الطلب الى دلفري معين
@@ -54,7 +54,6 @@ router.put("/order/:id/delivery-accept", upload.none(), async (req, res) => {
     order.isAccepted = false;
     order.rejectionReason = rejectionReason;
     await order.save();
-
     res.json({ message: "Delivery refused the order, status reset", order });
   }
 });
@@ -242,6 +241,13 @@ router.put("/orders/:id/status", upload.none(), async (req, res) => {
       include: [{ model: OrderStatusHistory, as: "statusHistory" }],
       order: [[{ model: OrderStatusHistory, as: "statusHistory" }, "changeDate", "ASC"]]
     });
+
+    if (status === "تم التسليم") {
+      await sendNotificationToUser(order.userId, "تم تسليم طلبك بنجاح", "تحديث الطلب");
+    } else if (["استرجاع الطلب", "تبديل الطلب"].includes(status)) {
+      await sendNotificationToUser(order.userId, `تم تحديث حالة طلبك: ${status}`, "تحديث الطلب");
+      await sendNotificationToRole("admin", `طلب رقم ${order.id} بحالة: ${status}`, "تنبيه طلب");
+    }
 
     res.status(200).json({
       message: "تم تحديث حالة الطلب بنجاح",
