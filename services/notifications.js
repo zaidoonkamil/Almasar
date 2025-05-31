@@ -28,7 +28,7 @@ const sendNotification = (message, heading) => {
             if (response.data.errors) {
                 console.error('❌ Error sending notification:', response.data.errors);
             } else {
-                console.log('✅ Notification sent successfully:', response.data);
+               // console.log('✅ Notification sent successfully:', response.data);
             }
         })
         .catch(error => {

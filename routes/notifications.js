@@ -2,8 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const { sendNotification } = require('../services/notifications');
+const multer = require("multer");
+const upload = multer();
 
-router.post('/send-notification', (req, res) => {
+
+router.post('/send-notification', upload.none(), (req, res) => {
     const { title, message } = req.body;
 
     if (!message) {
