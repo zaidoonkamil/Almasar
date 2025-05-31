@@ -39,46 +39,45 @@ const sendNotification = (message, heading) => {
         });
 };
 
-const sendNotificationToDelivery = async (message, heading) => {
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-        console.error('❌ message مطلوب ويجب أن يكون نصًا غير فارغ');
-        return;
+const sendNotificationToRole = async (role, message, title = "Notification") => {
+  if (!message) throw new Error("message مطلوب");
+  if (!role) throw new Error("role مطلوب");
+
+  try {
+    const devices = await UserDevice.findAll({
+      include: [{
+        model: User,
+        where: { role }
+      }]
+    });
+
+    const playerIds = devices.map(device => device.player_id);
+
+    if (playerIds.length === 0) {
+      console.warn(`⚠️ لا توجد أجهزة للمستخدمين برول ${role}`);
+      return { success: false, message: `لا توجد أجهزة للمستخدمين برول ${role}` };
     }
 
-    try {
-        const devices = await UserDevice.findAll({
-            include: [{
-                model: User,
-                where: { role: 'delivery' }
-            }]
-        });
+    const url = 'https://onesignal.com/api/v1/notifications';
+    const headers = {
+      'Authorization': `Basic ${process.env.ONESIGNAL_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
+    const data = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      include_player_ids: playerIds,
+      contents: { en: message },
+      headings: { en: title },
+    };
 
-        const playerIds = devices.map(device => device.player_id);
+    await axios.post(url, data, { headers });
+    console.log(`✅ تم إرسال إشعار لـ ${role}`);
+    return { success: true };
 
-        if (playerIds.length === 0) {
-            console.log("لا توجد أجهزة للدليفري");
-            return;
-        }
-
-        const url = 'https://onesignal.com/api/v1/notifications';
-        const headers = {
-            'Authorization': `Basic ${process.env.ONESIGNAL_API_KEY}`,
-            'Content-Type': 'application/json',
-        };
-
-        const data = {
-            app_id: process.env.ONESIGNAL_APP_ID,
-            include_player_ids: playerIds,
-            contents: { en: message },
-            headings: { en: heading },
-        };
-
-        await axios.post(url, data, { headers });
-        console.log('✅ Notification sent successfully to delivery devices.');
-
-    } catch (error) {
-        console.error('❌ Error sending notification to delivery:', error.response ? error.response.data : error.message);
-    }
+  } catch (error) {
+    console.error(`❌ Error sending notification to role ${role}:`, error.response ? error.response.data : error.message);
+    return { success: false, error: error.message };
+  }
 };
 
-module.exports = {sendNotification, sendNotificationToDelivery};
+module.exports = {sendNotification, sendNotificationToRole};

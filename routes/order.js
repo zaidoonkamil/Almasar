@@ -8,6 +8,7 @@ const multer = require("multer");
 const upload = multer();
 const { Op } = require("sequelize");
 const Cart = require("../models/cart");
+const { sendNotificationToRole } = require("../services/notifications");
 
 
 // اسناد الطلب الى دلفري معين
@@ -196,6 +197,8 @@ router.post("/orders", upload.none(), async (req, res) => {
             orderId: order.id,
             status: order.status
         });
+
+        await sendNotificationToRole("admin", "يوجد طلب جديد بانتظار المراجعة", "طلب جديد");
 
         res.status(201).json(order);
     } catch (err) {

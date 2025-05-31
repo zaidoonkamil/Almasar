@@ -93,6 +93,4 @@ router.post('/send-notification-to-role', upload.none(), async (req, res) => {
   }
 });
 
-
-
 module.exports = router;
