@@ -36,5 +36,4 @@ const sendNotification = (message, heading) => {
         });
 };
 
-
 module.exports = {sendNotification};
