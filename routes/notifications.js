@@ -88,4 +88,4 @@ const sendNotificationToDelivery = async (message, heading) => {
 };
 
 
-module.exports = { sendNotification, sendNotificationToDelivery };
+module.exports = router;
