@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const router = express.Router();
-const { sendNotification, sendNotificationToDelivery } = require('../services/notifications');
+const { sendNotification } = require('../services/notifications');
 const multer = require("multer");
 const upload = multer();
 const UserDevice = require("../models/user_device");

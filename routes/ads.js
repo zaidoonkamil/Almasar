@@ -2,6 +2,7 @@ const express = require("express");
 const Ads = require("../models/ads");
 const router = express.Router();
 const upload = require("../middlewares/uploads");
+const { sendNotificationToNonAdmin } = require("../services/notifications");
 
 router.post("/ads",upload.array("images",5) , async (req, res) => {
     try {
@@ -13,6 +14,7 @@ router.post("/ads",upload.array("images",5) , async (req, res) => {
             images,
         });
 
+        await sendNotificationToNonAdmin("تمت إضافة إعلان جديد، تصفحه الآن!", "إعلان جديد");
         res.status(201).json({ message: "ads created successfully", ads });
     } catch (err) {
         console.error("❌ Error creating ads:", err);

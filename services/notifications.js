@@ -80,4 +80,51 @@ const sendNotificationToRole = async (role, message, title = "Notification") => 
   }
 };
 
-module.exports = {sendNotification, sendNotificationToRole};
+const sendNotificationToNonAdmin = async (message, title = "إعلان جديد") => {
+  if (!message) throw new Error("message مطلوب");
+
+  try {
+    const devices = await UserDevice.findAll({
+      include: [{
+        model: User,
+        where: {
+          role: { [require('sequelize').Op.not]: 'admin' }
+        }
+      }]
+    });
+
+    const playerIds = devices.map(device => device.player_id);
+
+    if (playerIds.length === 0) {
+      console.warn("⚠️ لا توجد أجهزة للمستخدمين غير الإداريين");
+      return { success: false, message: "لا توجد أجهزة للمستخدمين غير الإداريين" };
+    }
+
+    const url = 'https://onesignal.com/api/v1/notifications';
+    const headers = {
+      'Authorization': `Basic ${process.env.ONESIGNAL_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
+    const data = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      include_player_ids: playerIds,
+      contents: { en: message },
+      headings: { en: title },
+    };
+
+    await axios.post(url, data, { headers });
+    console.log("✅ تم إرسال إشعار للمستخدمين غير الإداريين");
+    return { success: true };
+
+  } catch (error) {
+    console.error(`❌ Error sending notification to non-admin users:`, error.response ? error.response.data : error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+
+module.exports = {
+  sendNotification,
+  sendNotificationToRole,
+  sendNotificationToNonAdmin
+};

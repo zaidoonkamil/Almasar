@@ -10,10 +10,6 @@ const ratingRoutes = require("./routes/delivery_rating");
 const productsRoutes = require("./routes/products");
 const notifications = require("./routes/notifications");
 
-const https = require("https");
-const fs = require("fs");
-const { Server } = require("socket.io");
-
 const app = express();
 
 /*
@@ -30,7 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("./" + "uploads"));
 
-sequelize.sync({ alter: true }) 
+sequelize.sync({ force: false }) 
     .then(() => console.log("✅ Database & User table synced!"))
     .catch(err => console.error("❌ Error syncing database:", err));
 
@@ -44,11 +40,6 @@ app.use("/", locationRoutes);
 app.use("/", ratingRoutes);
 app.use("/", productsRoutes);
 app.use("/", notifications);
-
-/*
-io.on("connection", (socket) => {
-    console.log("✔️ Client connected:", socket.id);
-});*/
 
 
 app.listen(3000, () => {
