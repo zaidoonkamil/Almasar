@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Order  = require('../models/order');
 const DeliveryRating = require('../models/delivery_rating');
 const OrderStatusHistory = require("../models/orderStatusHistory");
+const Notification = require("../models/notification");
 const Product = require("../models/product");
 const OrderItem = require("../models/orderitem");
 
@@ -33,6 +34,9 @@ OrderItem.belongsTo(Product, { foreignKey: 'productId', onDelete: "CASCADE" });
 
 Order.hasMany(OrderItem, { as: "items", foreignKey: "orderId" });
 OrderItem.belongsTo(Product, { foreignKey: "productId" });
+
+User.hasMany(Notification, { foreignKey: 'user_id' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
 
 module.exports = {
   User,

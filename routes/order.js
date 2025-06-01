@@ -8,6 +8,7 @@ const multer = require("multer");
 const upload = multer();
 const { Op } = require("sequelize");
 const Cart = require("../models/cart");
+const Notification = require("../models/notification"); 
 const { sendNotificationToRole , sendNotificationToUser } = require("../services/notifications");
 
 
@@ -21,6 +22,11 @@ router.put("/order/:id/assign",upload.none(), async (req, res) => {
     order.assignedDeliveryId = deliveryId;
     await order.save();
     await sendNotificationToUser(deliveryId, 'لديك طلب جديد قم بمراجعته ', "طلب جديد");
+    /*await Notification.create({
+      user_id: deliveryId,
+      title:  "طلب جديد",
+       message: 'لديك طلب جديد قم بمراجعته '
+    });*/
     res.json({ message: "Order assigned to delivery", order });
 });
 
@@ -190,7 +196,17 @@ router.post("/orders", upload.none(), async (req, res) => {
             orderId: order.id,
             status: order.status
         });
-
+        /*
+        const admins = await User.findAll({
+  where: { role: 'admin' }
+});
+const notifications = admins.map(admin => ({
+  user_id: admin.id,
+  title: "طلب جديد",
+  message: "يوجد طلب جديد بانتظار المراجعة"
+}));
+await Notification.bulkCreate(notifications);
+*/
         await sendNotificationToRole("admin", "يوجد طلب جديد بانتظار المراجعة", "طلب جديد");
 
         res.status(201).json(order);
