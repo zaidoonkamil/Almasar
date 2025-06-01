@@ -8,7 +8,7 @@ const multer = require("multer");
 const upload = multer();
 const { Op } = require("sequelize");
 const Cart = require("../models/cart");
-const { sendNotificationToRole , sendNotificationToUser , sendNotificationToRole } = require("../services/notifications");
+const { sendNotificationToRole , sendNotificationToUser } = require("../services/notifications");
 
 
 // اسناد الطلب الى دلفري معين
