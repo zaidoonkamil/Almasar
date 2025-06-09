@@ -54,6 +54,54 @@ router.get("/admin/all-orders", async (req, res) => {
   }
 });
 
+router.get("/admin/returned-or-exchanged-orders", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where: {
+        status: ["استرجاع الطلب", "تبديل الطلب"]
+      },
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
+        },
+        { model: OrderStatusHistory, as: "statusHistory", order: [["createdAt", "DESC"]] },
+        { model: User, as: "user", attributes: { exclude: ['password'] } },
+        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset
+    });
+
+    const formattedOrders = orders.map(order => {
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
+    });
+
+    res.status(200).json({
+      totalOrders: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      orders: formattedOrders
+    });
+
+  } catch (err) {
+    console.error("❌ Error fetching returned/exchanged orders:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 router.get("/admin/order-pending", async (req, res) => {
   try {
