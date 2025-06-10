@@ -53,6 +53,24 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
   }
 });
 
+// حذف منتج معين لتاجر معين
+router.delete("/vendor/:vendorId/products/:productId", async (req, res) => {
+  try {
+    const { vendorId, productId } = req.params;
+
+    const product = await Product.findOne({ where: { id: productId, vendorId } });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await product.destroy();
+    res.json({ message: "Product deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error deleting product", error: err });
+  }
+});
+
 // عرض التجار حسب الافضلية
 router.get("/vendorbysponsored", async (req, res) => {
   try {
