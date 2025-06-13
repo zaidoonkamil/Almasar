@@ -165,10 +165,6 @@ router.post("/cart", upload.none(), async (req, res) => {
       where: { userId, productId },
     });
 
-    if (existingItem) {
-      return res.status(400).json({ error: "المنتج موجود بالفعل في السلة" });
-    }
-
     const cartItems = await Cart.findAll({
       where: { userId },
       include: {
@@ -186,10 +182,16 @@ router.post("/cart", upload.none(), async (req, res) => {
       }
     }
 
-    const newCartItem = await Cart.create({ 
-      userId, 
-      productId, 
-      quantity: quantity || 1  
+    if (existingItem) {
+      existingItem.quantity = quantity || 1;
+      await existingItem.save();
+      return res.status(200).json({ message: "تم تحديث الكمية", item: existingItem });
+    }
+
+    const newCartItem = await Cart.create({
+      userId,
+      productId,
+      quantity: quantity || 1
     });
 
     res.status(201).json(newCartItem);
