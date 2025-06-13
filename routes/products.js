@@ -53,6 +53,33 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
   }
 });
 
+// البحث عن منتج لدى تاجر معين
+router.get("/vendor/:vendorId/products/search", async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const { title } = req.query;
+
+    if (!title) {
+      return res.status(400).json({ message: "يرجى إدخال كلمة البحث" });
+    }
+
+    const products = await Product.findAll({
+      where: {
+        vendorId,
+        title: {
+          [Op.like]: `%${title}%`
+        }
+      }
+    });
+
+    res.status(200).json(products);
+
+  } catch (err) {
+    console.error("Error searching vendor products:", err);
+    res.status(500).json({ message: "حدث خطأ أثناء البحث", error: err });
+  }
+});
+
 // حذف منتج معين لتاجر معين
 router.delete("/vendor/:vendorId/products/:productId", async (req, res) => {
   try {
@@ -204,7 +231,6 @@ router.post("/cart", upload.none(), async (req, res) => {
     res.status(500).json({ error: "خطأ أثناء الإضافة للسلة" });
   }
 });
-
 
 router.get("/cart/:userId", async (req, res) => {
   try {
