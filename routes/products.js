@@ -57,28 +57,41 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
 router.get("/vendor/:vendorId/products/search", async (req, res) => {
   try {
     const { vendorId } = req.params;
-    const { title } = req.query;
+    const { title, page = 1, limit = 10 } = req.query;
 
     if (!title) {
       return res.status(400).json({ message: "يرجى إدخال كلمة البحث" });
     }
 
-    const products = await Product.findAll({
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Product.findAndCountAll({
       where: {
         vendorId,
         title: {
           [Op.like]: `%${title}%`
         }
-      }
+      },
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['createdAt', 'DESC']]
     });
 
-    res.status(200).json(products);
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
+      totalProducts: count,
+      totalPages: totalPages,
+      currentPage: parseInt(page),
+      products: rows
+    });
 
   } catch (err) {
     console.error("Error searching vendor products:", err);
     res.status(500).json({ message: "حدث خطأ أثناء البحث", error: err });
   }
 });
+
 
 // حذف منتج معين لتاجر معين
 router.delete("/vendor/:vendorId/products/:productId", async (req, res) => {
