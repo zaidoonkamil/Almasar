@@ -194,7 +194,10 @@ router.post("/cart", upload.none(), async (req, res) => {
       quantity: quantity || 1
     });
 
-    res.status(201).json(newCartItem);
+    res.status(201).json({
+    message: "تم اضافة المنتج بنجاح",
+    item: newCartItem
+    });
 
   } catch (err) {
     console.error("Error adding to cart:", err);
