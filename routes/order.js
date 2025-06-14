@@ -196,7 +196,7 @@ router.post("/orders", upload.none(), async (req, res) => {
         await OrderStatusHistory.create({
             orderId: order.id,
             status: order.status,
-            createdAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
+            createdAt: nowPlus3Hours,
         });
         await sendNotificationToRole("admin", "يوجد طلب جديد بانتظار المراجعة", "طلب جديد");
 
@@ -329,7 +329,7 @@ router.get("/orders/:userId", async (req, res) => {
 router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
   const { address, phone, notes, products, userId } = req.body;
   const { vendorId } = req.params;
-
+  const nowPlus3Hours = new Date(Date.now() + 3 * 60 * 60 * 1000);
   try {
     // تحويل JSON string إلى Array لو جاي من form-data
     const productList = typeof products === "string" ? JSON.parse(products) : products;
@@ -365,7 +365,8 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
       phone,
       orderAmount: totalAmount,
       deliveryFee: 0,
-      notes
+      notes,
+      createdAt: nowPlus3Hours,
     });
 
     // ربط المنتجات بالطلب (نفترض عندك جدول OrderItems)
@@ -373,14 +374,16 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
       await OrderItem.create({
         orderId: order.id,
         productId: p.productId,
-        quantity: p.quantity || 1
+        quantity: p.quantity || 1,
+        createdAt: nowPlus3Hours,
       });
     }
 
     // حفظ الحالة الأولية
     await OrderStatusHistory.create({
       orderId: order.id,
-      status: order.status
+      status: order.status,
+      createdAt: nowPlus3Hours,
     });
 
     await Cart.destroy({ where: { userId } });

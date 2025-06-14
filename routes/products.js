@@ -9,6 +9,7 @@ const sequelize = require("../config/db");
 
 // إضافة منتج جديد
 router.post("/vendor/:vendorId/products",upload.array("images",5), async (req, res) => {
+  const nowPlus3Hours = new Date(Date.now() + 3 * 60 * 60 * 1000);
   try {
     const { title, description, price } = req.body;
     const images = req.files.map(file => file.filename);
@@ -20,6 +21,7 @@ router.post("/vendor/:vendorId/products",upload.array("images",5), async (req, r
       price,
       images,
       vendorId,
+      createdAt: nowPlus3Hours,
     });
     res.json(product);
   } catch (err) {
