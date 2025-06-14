@@ -180,6 +180,7 @@ router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
 
 router.post("/orders", upload.none(), async (req, res) => {
     const { address, phone, orderAmount, deliveryFee, notes, userId } = req.body;
+    const nowPlus3Hours = new Date(Date.now() + 3 * 60 * 60 * 1000);
 
     try {
         const order = await Order.create({
@@ -189,24 +190,14 @@ router.post("/orders", upload.none(), async (req, res) => {
             orderAmount,
             deliveryFee,
             notes,
-            
+            createdAt: nowPlus3Hours,
         });
 
         await OrderStatusHistory.create({
             orderId: order.id,
-            status: order.status
+            status: order.status,
+            createdAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
         });
-        /*
-        const admins = await User.findAll({
-  where: { role: 'admin' }
-});
-const notifications = admins.map(admin => ({
-  user_id: admin.id,
-  title: "طلب جديد",
-  message: "يوجد طلب جديد بانتظار المراجعة"
-}));
-await Notification.bulkCreate(notifications);
-*/
         await sendNotificationToRole("admin", "يوجد طلب جديد بانتظار المراجعة", "طلب جديد");
 
         res.status(201).json(order);

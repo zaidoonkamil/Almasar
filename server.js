@@ -45,6 +45,7 @@ app.use("/", notifications);
 app.listen(3000, () => {
     console.log("Server is running on port https://168.231.111.44:3000");
 });
+console.log(new Date());
 
 // http://localhost:3000
 // https://backendalmasar.khayrat-alrahman.com
