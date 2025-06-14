@@ -447,7 +447,7 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = order.OrderItems.length > 0 ? order.OrderItems : null;
+      const items = order.items.length > 0 ? order.items : null;
       return { ...order.toJSON(), items };
     });
 
