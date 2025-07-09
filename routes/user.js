@@ -52,11 +52,11 @@ router.get('/fix-carts-fk', async (req, res) => {
       DEALLOCATE PREPARE stmt;
     `).catch(() => { /* ممكن لا يوجد القيد */ });
 
-    // أضف القيد مع ON DELETE CASCADE
+    // أضف القيد مع ON DELETE CASCADE مع اسم الجدول الصحيح Users بحرف U كبير
     await sequelize.query(`
       ALTER TABLE carts
       ADD CONSTRAINT fk_carts_userId
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (userId) REFERENCES Users(id)
       ON DELETE CASCADE
       ON UPDATE CASCADE;
     `);
@@ -69,7 +69,7 @@ router.get('/fix-carts-fk', async (req, res) => {
   }
 });
 
-// راوت لتعديل FK في جدول user_devices
+
 router.get('/fix-user-devices-fk', async (req, res) => {
   try {
     await sequelize.query(`
@@ -89,12 +89,12 @@ router.get('/fix-user-devices-fk', async (req, res) => {
       PREPARE stmt FROM @dropSql;
       EXECUTE stmt;
       DEALLOCATE PREPARE stmt;
-    `).catch(() => { /* ممكن لا يوجد القيد */ });
+    `).catch(() => { /* قد لا يكون القيد موجود */ });
 
     await sequelize.query(`
       ALTER TABLE user_devices
       ADD CONSTRAINT fk_user_devices_user_id
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES Users(id)
       ON DELETE CASCADE
       ON UPDATE CASCADE;
     `);
@@ -106,6 +106,7 @@ router.get('/fix-user-devices-fk', async (req, res) => {
     res.status(500).json({ error: "Failed to fix user_devices FK", details: error.message });
   }
 });
+
 
 
 router.delete("/users/:id", async (req, res) => {
