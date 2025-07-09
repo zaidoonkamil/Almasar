@@ -26,10 +26,12 @@ const Cart = sequelize.define("cart", {
   timestamps: true
 });
 
-Cart.belongsTo(User, { foreignKey: 'userId' });
-Cart.belongsTo(Product, { foreignKey: 'productId' });
-User.hasMany(Cart, { foreignKey: 'userId' });
-Product.hasMany(Cart, { foreignKey: 'productId' });
-Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
+// User ↔ Cart
+Cart.belongsTo(User, { foreignKey: 'userId', onDelete: 'CASCADE' });
+User.hasMany(Cart, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
+// Product ↔ Cart
+Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product', onDelete: 'CASCADE' });
+Product.hasMany(Cart, { foreignKey: 'productId', onDelete: 'CASCADE' });
 
 module.exports = Cart;

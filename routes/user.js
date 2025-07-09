@@ -8,6 +8,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 const multer = require("multer");
 const upload = require("../middlewares/uploads");
+const sequelize = require('../config/db');
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -27,6 +28,48 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+router.get("/fix-cart-user-fk", async (req, res) => {
+  try {
+    // احذف الـ foreign key الحالي
+    await sequelize.query(`
+      ALTER TABLE carts
+      DROP FOREIGN KEY carts_ibfk_1;
+    `);
+
+    // أضف constraint جديد مع ON DELETE CASCADE
+    await sequelize.query(`
+      ALTER TABLE carts
+      ADD CONSTRAINT carts_ibfk_1 
+      FOREIGN KEY (userId) REFERENCES users(id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE;
+    `);
+
+    res.json({ message: "✅ Constraint updated successfully to ON DELETE CASCADE." });
+
+  } catch (error) {
+    console.error("❌ Error updating constraint:", error);
+    res.status(500).json({ error: "Failed to update constraint", details: error.message });
+  }
+});
+
+router.delete("/users/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        await user.destroy();
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (err) {
+        console.error("❌ Error deleting user:", err.message);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 router.get("/verify-token", (req, res) => {
   const token = req.headers.authorization;
@@ -119,8 +162,6 @@ router.post("/login", upload.none() ,async (req, res) => {
     }
 });
 
-
-// Endpoint للحصول على جميع المستخدمين
 router.get("/users", async (req, res) => {
     try {
         const users = await User.findAll(); 
@@ -147,7 +188,6 @@ router.get("/profile", authenticateToken, async (req, res) => {
     }
 });
 
-// للحصول على بيانات مستخدم معين
 router.get("/users/:id", authenticateToken ,async (req,res)=>{
     const {id} = req.params;
 
@@ -169,23 +209,6 @@ router.get("/users/:id", authenticateToken ,async (req,res)=>{
     }
     }
 );
-
-router.delete("/users/:id", async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        await user.destroy();
-        res.status(200).json({ message: "User deleted successfully" });
-    } catch (err) {
-        console.error("❌ Error deleting user:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
 
 router.get("/usersDelivery", async (req, res) => {
     try {

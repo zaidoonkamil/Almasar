@@ -5,38 +5,39 @@ const OrderStatusHistory = require("../models/orderStatusHistory");
 const Notification = require("../models/notification");
 const Product = require("../models/product");
 const OrderItem = require("../models/orderitem");
+const Cart = require("../models/cart"); 
 
-// user ↔ orders
-Order.belongsTo(User, { foreignKey: "userId", as: "user", onDelete: "CASCADE" });
+// User ↔ Orders (client)
 User.hasMany(Order, { foreignKey: "userId", as: "orders", onDelete: "CASCADE" });
+Order.belongsTo(User, { foreignKey: "userId", as: "client", onDelete: "CASCADE" });
 
-// order ↔ order status history
-Order.hasMany(OrderStatusHistory, { foreignKey: "orderId", as: "statusHistory", onDelete: "CASCADE" });
-OrderStatusHistory.belongsTo(Order, { foreignKey: "orderId", onDelete: "CASCADE" });
+// User ↔ Orders (delivery/driver)
+User.hasMany(Order, { foreignKey: "assignedDeliveryId", as: "deliveries", onDelete: "SET NULL" });
+Order.belongsTo(User, { foreignKey: "assignedDeliveryId", as: "delivery", onDelete: "SET NULL" });
 
-// order ↔ delivery (driver)
-Order.belongsTo(User, { as: "delivery", foreignKey: "assignedDeliveryId", onDelete: "SET NULL" });
-
-// order ↔ delivery rating
-Order.hasOne(DeliveryRating, { as: "rating", foreignKey: "orderId", onDelete: "CASCADE" });
-DeliveryRating.belongsTo(Order, { foreignKey: "orderId", onDelete: "CASCADE" });
-
-// user (vendor) ↔ products
-Product.belongsTo(User, { foreignKey: "vendorId", as: "vendor", onDelete: "CASCADE" });
+// User ↔ Products (vendor)
 User.hasMany(Product, { foreignKey: "vendorId", as: "products", onDelete: "CASCADE" });
+Product.belongsTo(User, { foreignKey: "vendorId", as: "vendor", onDelete: "CASCADE" });
 
-// order ↔ order items
-Order.hasMany(OrderItem, { foreignKey: 'orderId', onDelete: "CASCADE" });
-OrderItem.belongsTo(Order, { foreignKey: 'orderId', onDelete: "CASCADE" });
+// User ↔ Notifications
+User.hasMany(Notification, { foreignKey: "user_id", as: "notifications", onDelete: "CASCADE" });
+Notification.belongsTo(User, { foreignKey: "user_id", as: "user", onDelete: "CASCADE" });
 
-// order item ↔ product
-OrderItem.belongsTo(Product, { foreignKey: 'productId', onDelete: "CASCADE" });
+// Order ↔ OrderItems
+Order.hasMany(OrderItem, { foreignKey: "orderId", as: "items", onDelete: "CASCADE" });
+OrderItem.belongsTo(Order, { foreignKey: "orderId", as: "order", onDelete: "CASCADE" });
 
-Order.hasMany(OrderItem, { as: "items", foreignKey: "orderId" });
-OrderItem.belongsTo(Product, { foreignKey: "productId" });
+// Order ↔ OrderStatusHistory
+Order.hasMany(OrderStatusHistory, { foreignKey: "orderId", as: "statusHistory", onDelete: "CASCADE" });
+OrderStatusHistory.belongsTo(Order, { foreignKey: "orderId", as: "order", onDelete: "CASCADE" });
 
-User.hasMany(Notification, { foreignKey: 'user_id' });
-Notification.belongsTo(User, { foreignKey: 'user_id' });
+// Order ↔ DeliveryRating
+Order.hasOne(DeliveryRating, { foreignKey: "orderId", as: "rating", onDelete: "CASCADE" });
+DeliveryRating.belongsTo(Order, { foreignKey: "orderId", as: "order", onDelete: "CASCADE" });
+
+// OrderItem ↔ Product
+OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product", onDelete: "CASCADE" });
+Product.hasMany(OrderItem, { foreignKey: "productId", as: "orderItems", onDelete: "CASCADE" });
 
 module.exports = {
   User,
@@ -44,5 +45,7 @@ module.exports = {
   Order,
   OrderStatusHistory,
   DeliveryRating,
-  OrderItem
+  OrderItem,
+  Notification,
+  Cart
 };
