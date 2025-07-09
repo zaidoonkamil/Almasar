@@ -108,7 +108,6 @@ router.get('/fix-user-devices-fk', async (req, res) => {
 });
 
 
-
 router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
 

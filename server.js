@@ -11,23 +11,12 @@ const productsRoutes = require("./routes/products");
 const notifications = require("./routes/notifications");
 
 const app = express();
-
-/*
-const server = https.createServer({
-key: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/privkey.pem"),
-cert: fs.readFileSync("/etc/letsencrypt/live/backendalmasar.khayrat-alrahman.com/fullchain.pem"),
-}, app);
-
-
-const io = new Server(server, { cors: { origin: "*" }});
-app.set("io", io);*/
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("./" + "uploads"));
 
 sequelize.sync({ 
-   alter: true
+  // alter: true
     // force: false 
 }) .then(() => console.log("✅ Database & User table synced!"))
     .catch(err => console.error("❌ Error syncing database:", err));
@@ -47,7 +36,3 @@ app.use("/", notifications);
 app.listen(3000, () => {
     console.log("Server is running on port https://168.231.111.44:3000");
 });
-console.log(new Date());
-
-// http://localhost:3000
-// https://backendalmasar.khayrat-alrahman.com
