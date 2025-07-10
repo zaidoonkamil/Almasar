@@ -31,28 +31,26 @@ const authenticateToken = (req, res, next) => {
 
 router.get('/fix-carts-fk', async (req, res) => {
   try {
-    // تحقق من وجود القيد وحذفه قبل الإضافة
-    await sequelize.query(`
-      SET @fkName := (
-        SELECT constraint_name
-        FROM information_schema.table_constraints
-        WHERE table_schema = DATABASE()
-          AND table_name = 'carts'
-          AND constraint_type = 'FOREIGN KEY'
-          AND constraint_name LIKE '%userId%'
-        LIMIT 1
-      );
+    // جلب اسم القيد الحالي (إن وجد)
+    const [result] = await sequelize.query(`
+      SELECT constraint_name
+      FROM information_schema.key_column_usage
+      WHERE table_schema = DATABASE()
+        AND table_name = 'carts'
+        AND referenced_table_name = 'Users'
+        AND column_name = 'userId'
+      LIMIT 1;
     `);
 
-    // DROP FOREIGN KEY إن وجد
-    await sequelize.query(`
-      SET @dropSql = CONCAT('ALTER TABLE carts DROP FOREIGN KEY ', @fkName);
-      PREPARE stmt FROM @dropSql;
-      EXECUTE stmt;
-      DEALLOCATE PREPARE stmt;
-    `).catch(() => { /* ممكن لا يوجد القيد */ });
+    // إذا فيه قيد — نحذفه
+    if (result.length > 0) {
+      const constraintName = result[0].constraint_name;
+      await sequelize.query(`
+        ALTER TABLE carts DROP FOREIGN KEY \`${constraintName}\`;
+      `);
+    }
 
-    // أضف القيد مع ON DELETE CASCADE مع اسم الجدول الصحيح Users بحرف U كبير
+    // إضافة القيد الجديد
     await sequelize.query(`
       ALTER TABLE carts
       ADD CONSTRAINT fk_carts_userId
@@ -61,7 +59,7 @@ router.get('/fix-carts-fk', async (req, res) => {
       ON UPDATE CASCADE;
     `);
 
-    res.json({ message: "✅ Foreign key in carts fixed successfully" });
+    res.json({ message: "✅ Foreign key in carts fixed successfully." });
 
   } catch (error) {
     console.error("❌ Error fixing carts FK:", error);
