@@ -9,7 +9,7 @@ const Cart = require("../models/cart");
 
 // User ↔ Orders (client)
 User.hasMany(Order, { foreignKey: "userId", as: "orders", onDelete: "CASCADE" });
-Order.belongsTo(User, { foreignKey: "userId", as: "client", onDelete: "CASCADE" });
+Order.belongsTo(User, { foreignKey: "userId", as: "user", onDelete: "CASCADE" });
 
 // User ↔ Orders (delivery/driver)
 User.hasMany(Order, { foreignKey: "assignedDeliveryId", as: "deliveries", onDelete: "SET NULL" });

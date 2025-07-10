@@ -31,7 +31,6 @@ const authenticateToken = (req, res, next) => {
 
 router.get('/fix-carts-fk', async (req, res) => {
   try {
-    // جلب اسم القيد الحالي (إن وجد)
     const [result] = await sequelize.query(`
       SELECT tc.constraint_name
       FROM information_schema.table_constraints AS tc
@@ -42,11 +41,10 @@ router.get('/fix-carts-fk', async (req, res) => {
         AND tc.table_name = 'carts'
         AND tc.constraint_type = 'FOREIGN KEY'
         AND kcu.column_name = 'userId'
-        AND kcu.referenced_table_name = 'Users'
       LIMIT 1;
     `);
 
-    if (result.length > 0) {
+    if (result.length > 0 && result[0].constraint_name) {
       const constraintName = result[0].constraint_name;
       await sequelize.query(`
         ALTER TABLE carts DROP FOREIGN KEY \`${constraintName}\`;
@@ -72,6 +70,7 @@ router.get('/fix-carts-fk', async (req, res) => {
     res.status(500).json({ error: "Failed to fix carts FK", details: error.message });
   }
 });
+
 
 
 router.delete("/users/:id", async (req, res) => {
