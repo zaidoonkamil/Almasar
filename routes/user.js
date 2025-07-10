@@ -33,12 +33,16 @@ router.get('/fix-carts-fk', async (req, res) => {
   try {
     // جلب اسم القيد الحالي (إن وجد)
     const [result] = await sequelize.query(`
-      SELECT constraint_name
-      FROM information_schema.key_column_usage
-      WHERE table_schema = DATABASE()
-        AND table_name = 'carts'
-        AND referenced_table_name = 'Users'
-        AND column_name = 'userId'
+      SELECT tc.constraint_name
+      FROM information_schema.table_constraints AS tc
+      JOIN information_schema.key_column_usage AS kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      WHERE tc.table_schema = DATABASE()
+        AND tc.table_name = 'carts'
+        AND tc.constraint_type = 'FOREIGN KEY'
+        AND kcu.column_name = 'userId'
+        AND kcu.referenced_table_name = 'Users'
       LIMIT 1;
     `);
 
@@ -47,11 +51,12 @@ router.get('/fix-carts-fk', async (req, res) => {
       await sequelize.query(`
         ALTER TABLE carts DROP FOREIGN KEY \`${constraintName}\`;
       `);
+      console.log(`✅ Dropped FK: ${constraintName}`);
     } else {
       console.log("⚠️ No existing FK to drop.");
     }
 
-    // إضافة القيد الجديد (مع try-catch منفصل لو أردت)
+    // إضافة القيد الجديد
     await sequelize.query(`
       ALTER TABLE carts
       ADD CONSTRAINT fk_carts_userId
