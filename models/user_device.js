@@ -22,8 +22,4 @@ const UserDevice = sequelize.define("UserDevice", {
     tableName: "user_devices"
 });
 
-
-UserDevice.belongsTo(User, { foreignKey: "user_id" });
-User.hasMany(UserDevice, { foreignKey: "user_id" });
-
 module.exports = UserDevice;

@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Order  = require('../models/order');
 const DeliveryRating = require('../models/delivery_rating');
 const OrderStatusHistory = require("../models/orderStatusHistory");
+const UserDevice = require('../models/user_device.js'); 
 const Notification = require("../models/notification");
 const Product = require("../models/product");
 const OrderItem = require("../models/orderitem");
@@ -39,9 +40,13 @@ DeliveryRating.belongsTo(Order, { foreignKey: "orderId", as: "order", onDelete: 
 OrderItem.belongsTo(Product, { foreignKey: "productId", onDelete: "CASCADE" });
 Product.hasMany(OrderItem, { foreignKey: "productId", onDelete: "CASCADE" });
 
+User.hasMany(UserDevice, { foreignKey: "user_id", as: "devices", onDelete: "CASCADE" });
+UserDevice.belongsTo(User, { foreignKey: "user_id", as: "user", onDelete: "CASCADE" });
+
 
 module.exports = {
   User,
+  UserDevice,
   Product,
   Order,
   OrderStatusHistory,
