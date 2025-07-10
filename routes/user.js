@@ -42,15 +42,16 @@ router.get('/fix-carts-fk', async (req, res) => {
       LIMIT 1;
     `);
 
-    // إذا فيه قيد — نحذفه
     if (result.length > 0) {
       const constraintName = result[0].constraint_name;
       await sequelize.query(`
         ALTER TABLE carts DROP FOREIGN KEY \`${constraintName}\`;
       `);
+    } else {
+      console.log("⚠️ No existing FK to drop.");
     }
 
-    // إضافة القيد الجديد
+    // إضافة القيد الجديد (مع try-catch منفصل لو أردت)
     await sequelize.query(`
       ALTER TABLE carts
       ADD CONSTRAINT fk_carts_userId
@@ -64,44 +65,6 @@ router.get('/fix-carts-fk', async (req, res) => {
   } catch (error) {
     console.error("❌ Error fixing carts FK:", error);
     res.status(500).json({ error: "Failed to fix carts FK", details: error.message });
-  }
-});
-
-
-router.get('/fix-user-devices-fk', async (req, res) => {
-  try {
-    await sequelize.query(`
-      SET @fkName := (
-        SELECT constraint_name
-        FROM information_schema.table_constraints
-        WHERE table_schema = DATABASE()
-          AND table_name = 'user_devices'
-          AND constraint_type = 'FOREIGN KEY'
-          AND constraint_name LIKE '%user_id%'
-        LIMIT 1
-      );
-    `);
-
-    await sequelize.query(`
-      SET @dropSql = CONCAT('ALTER TABLE user_devices DROP FOREIGN KEY ', @fkName);
-      PREPARE stmt FROM @dropSql;
-      EXECUTE stmt;
-      DEALLOCATE PREPARE stmt;
-    `).catch(() => { /* قد لا يكون القيد موجود */ });
-
-    await sequelize.query(`
-      ALTER TABLE user_devices
-      ADD CONSTRAINT fk_user_devices_user_id
-      FOREIGN KEY (user_id) REFERENCES Users(id)
-      ON DELETE CASCADE
-      ON UPDATE CASCADE;
-    `);
-
-    res.json({ message: "✅ Foreign key in user_devices fixed successfully" });
-
-  } catch (error) {
-    console.error("❌ Error fixing user_devices FK:", error);
-    res.status(500).json({ error: "Failed to fix user_devices FK", details: error.message });
   }
 });
 
