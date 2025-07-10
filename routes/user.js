@@ -31,13 +31,9 @@ const authenticateToken = (req, res, next) => {
 
 router.get('/fix-user-fks', async (req, res) => {
   try {
-    // قائمة الجداول والقيود المرتبطة بمفتاح user
     const fksToFix = [
-      { table: 'user_devices', column: 'user_id', constraint: null },
-      { table: 'carts', column: 'userId', constraint: null },
-      // أضف هنا أي جدول وعمود تريد تعديله
-      // { table: 'orders', column: 'userId', constraint: null },
-      // { table: 'notifications', column: 'user_id', constraint: null },
+      { table: 'user_devices', column: 'user_id' },
+      { table: 'carts', column: 'userId' },
     ];
 
     for (const fk of fksToFix) {
@@ -56,28 +52,26 @@ router.get('/fix-user-fks', async (req, res) => {
         LIMIT 1;
       `);
 
-      if (constraints.length > 0) {
+      if (constraints.length > 0 && constraints[0].constraint_name) {
         const constraintName = constraints[0].constraint_name;
 
         // حذف القيد القديم
         await sequelize.query(`ALTER TABLE \`${fk.table}\` DROP FOREIGN KEY \`${constraintName}\`;`);
         console.log(`✅ Dropped FK ${constraintName} from table ${fk.table}`);
-
-        // توليد اسم قيد جديد واضح أو استخدم نفس الاسم
-        const newConstraintName = `fk_${fk.table}_${fk.column}`;
-
-        // إضافة القيد الجديد مع ON DELETE CASCADE
-        await sequelize.query(`
-          ALTER TABLE \`${fk.table}\`
-          ADD CONSTRAINT \`${newConstraintName}\`
-          FOREIGN KEY (\`${fk.column}\`) REFERENCES \`Users\`(id)
-          ON DELETE CASCADE
-          ON UPDATE CASCADE;
-        `);
-        console.log(`✅ Added FK ${newConstraintName} to table ${fk.table}`);
       } else {
         console.log(`⚠️ No FK constraint found on ${fk.table}.${fk.column}`);
       }
+
+      // إضافة القيد الجديد باسم واضح
+      const newConstraintName = `fk_${fk.table}_${fk.column}`;
+      await sequelize.query(`
+        ALTER TABLE \`${fk.table}\`
+        ADD CONSTRAINT \`${newConstraintName}\`
+        FOREIGN KEY (\`${fk.column}\`) REFERENCES \`Users\`(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE;
+      `);
+      console.log(`✅ Added FK ${newConstraintName} to table ${fk.table}`);
     }
 
     res.json({ message: "✅ All user-related foreign keys fixed successfully with ON DELETE CASCADE." });
