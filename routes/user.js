@@ -29,15 +29,16 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-router.get('/fix-user-fks', async (req, res) => {
+router.get('/fix-foreign-keys', async (req, res) => {
   try {
-    const fksToFix = [
-      { table: 'user_devices', column: 'user_id' },
-      { table: 'carts', column: 'userId' },
+    const tablesToFix = [
+      { table: 'user_devices', column: 'user_id', constraintName: 'fk_user_devices_user_id' },
+      { table: 'carts', column: 'userId', constraintName: 'fk_carts_userId' },
+      // اضف جداول أخرى حسب حاجتك
     ];
 
-    for (const fk of fksToFix) {
-      // جلب اسم القيد الحالي
+    for (const { table, column, constraintName } of tablesToFix) {
+      // فحص إذا القيد موجود بأي اسم
       const [constraints] = await sequelize.query(`
         SELECT tc.constraint_name
         FROM information_schema.table_constraints AS tc
@@ -45,42 +46,53 @@ router.get('/fix-user-fks', async (req, res) => {
           ON tc.constraint_name = kcu.constraint_name
           AND tc.table_schema = kcu.table_schema
         WHERE tc.table_schema = DATABASE()
-          AND tc.table_name = '${fk.table}'
+          AND tc.table_name = '${table}'
           AND tc.constraint_type = 'FOREIGN KEY'
-          AND kcu.column_name = '${fk.column}'
+          AND kcu.column_name = '${column}'
           AND kcu.referenced_table_name = 'Users'
         LIMIT 1;
       `);
 
-      if (constraints.length > 0 && constraints[0].constraint_name) {
-        const constraintName = constraints[0].constraint_name;
+      if (constraints.length > 0) {
+        const existingConstraint = constraints[0].constraint_name;
 
         // حذف القيد القديم
-        await sequelize.query(`ALTER TABLE \`${fk.table}\` DROP FOREIGN KEY \`${constraintName}\`;`);
-        console.log(`✅ Dropped FK ${constraintName} from table ${fk.table}`);
-      } else {
-        console.log(`⚠️ No FK constraint found on ${fk.table}.${fk.column}`);
+        await sequelize.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${existingConstraint}\`;`);
+        console.log(`✅ Dropped FK ${existingConstraint} on table ${table}`);
       }
 
-      // إضافة القيد الجديد باسم واضح
-      const newConstraintName = `fk_${fk.table}_${fk.column}`;
-      await sequelize.query(`
-        ALTER TABLE \`${fk.table}\`
-        ADD CONSTRAINT \`${newConstraintName}\`
-        FOREIGN KEY (\`${fk.column}\`) REFERENCES \`Users\`(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE;
+      // فحص إذا القيد الجديد موجود بالفعل
+      const [existingNew] = await sequelize.query(`
+        SELECT CONSTRAINT_NAME 
+        FROM information_schema.table_constraints 
+        WHERE table_schema = DATABASE()
+          AND table_name = '${table}'
+          AND CONSTRAINT_NAME = '${constraintName}'
       `);
-      console.log(`✅ Added FK ${newConstraintName} to table ${fk.table}`);
+
+      if (existingNew.length === 0) {
+        // إضافة القيد الجديد
+        await sequelize.query(`
+          ALTER TABLE \`${table}\`
+          ADD CONSTRAINT \`${constraintName}\`
+          FOREIGN KEY (\`${column}\`) REFERENCES \`Users\`(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE;
+        `);
+        console.log(`✅ Added FK ${constraintName} on table ${table}`);
+      } else {
+        console.log(`⚠️ FK ${constraintName} already exists on ${table}`);
+      }
     }
 
-    res.json({ message: "✅ All user-related foreign keys fixed successfully with ON DELETE CASCADE." });
+    res.json({ message: "✅ All foreign keys fixed and verified." });
 
   } catch (error) {
-    console.error("❌ Error fixing user foreign keys:", error);
-    res.status(500).json({ error: "Failed to fix user foreign keys", details: error.message });
+    console.error("❌ Error fixing foreign keys:", error);
+    res.status(500).json({ error: "Failed to fix foreign keys", details: error.message });
   }
 });
+
 
 router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
