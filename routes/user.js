@@ -34,11 +34,9 @@ router.get('/fix-foreign-keys', async (req, res) => {
     const tablesToFix = [
       { table: 'user_devices', column: 'user_id', constraintName: 'fk_user_devices_user_id' },
       { table: 'carts', column: 'userId', constraintName: 'fk_carts_userId' },
-      // { table: 'orders', column: 'userId', constraintName: 'fk_orders_userId' },
     ];
 
     for (const { table, column, constraintName } of tablesToFix) {
-      // جلب اسم القيد الحالي
       const [constraints] = await sequelize.query(`
         SELECT tc.constraint_name
         FROM information_schema.table_constraints AS tc
@@ -56,14 +54,12 @@ router.get('/fix-foreign-keys', async (req, res) => {
       if (constraints.length > 0 && constraints[0].constraint_name) {
         const existingConstraint = constraints[0].constraint_name;
 
-        // حذف القيد القديم
         await sequelize.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${existingConstraint}\`;`);
         console.log(`✅ Dropped FK ${existingConstraint} on table ${table}`);
       } else {
         console.log(`⚠️ No existing FK on ${table}.${column} to drop`);
       }
 
-      // فحص هل القيد الجديد موجود بالفعل
       const [existingNew] = await sequelize.query(`
         SELECT CONSTRAINT_NAME 
         FROM information_schema.table_constraints 
@@ -73,7 +69,6 @@ router.get('/fix-foreign-keys', async (req, res) => {
       `);
 
       if (existingNew.length === 0) {
-        // إضافة القيد الجديد
         await sequelize.query(`
           ALTER TABLE \`${table}\`
           ADD CONSTRAINT \`${constraintName}\`
