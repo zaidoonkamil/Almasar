@@ -71,7 +71,62 @@ router.get('/fix-carts-fk', async (req, res) => {
   }
 });
 
+router.get('/fix-user-fk-cascade', async (req, res) => {
+  try {
+    // قائمة الجداول والقيود المرتبطة بـ user_id
+    const tablesToFix = [
+      { table: 'user_devices', column: 'user_id' },
+      { table: 'carts', column: 'userId' },
+      // اضف جداول أخرى حسب حاجتك
+      // { table: 'orders', column: 'userId' },
+      // { table: 'notifications', column: 'user_id' },
+      // ...
+    ];
 
+    for (const { table, column } of tablesToFix) {
+      // جلب اسم القيد الحالي
+      const [constraints] = await sequelize.query(`
+        SELECT tc.constraint_name
+        FROM information_schema.table_constraints AS tc
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        WHERE tc.table_schema = DATABASE()
+          AND tc.table_name = '${table}'
+          AND tc.constraint_type = 'FOREIGN KEY'
+          AND kcu.column_name = '${column}'
+          AND kcu.referenced_table_name = 'Users'
+        LIMIT 1;
+      `);
+
+      if (constraints.length > 0) {
+        const constraintName = constraints[0].constraint_name;
+
+        // حذف القيد القديم
+        await sequelize.query(`ALTER TABLE ${table} DROP FOREIGN KEY \`${constraintName}\`;`);
+        console.log(`✅ Dropped FK ${constraintName} on table ${table}`);
+
+        // إعادة إضافة القيد مع ON DELETE CASCADE
+        await sequelize.query(`
+          ALTER TABLE ${table}
+          ADD CONSTRAINT \`${constraintName}\`
+          FOREIGN KEY (${column}) REFERENCES Users(id)
+          ON DELETE CASCADE
+          ON UPDATE CASCADE;
+        `);
+        console.log(`✅ Added FK with ON DELETE CASCADE on table ${table}`);
+      } else {
+        console.log(`⚠️ No FK constraint found on ${table}.${column}`);
+      }
+    }
+
+    res.json({ message: "✅ All user foreign keys fixed with ON DELETE CASCADE." });
+
+  } catch (error) {
+    console.error("❌ Error fixing user foreign keys:", error);
+    res.status(500).json({ error: "Failed to fix user foreign keys", details: error.message });
+  }
+});
 
 router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
