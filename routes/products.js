@@ -254,7 +254,8 @@ router.get("/cart/:userId", async (req, res) => {
     const cartItems = await Cart.findAll({
       where: { userId },
       include: {
-        model: Product
+        model: Product,
+        as: 'product' ,
       }
     });
 

@@ -8,15 +8,8 @@ const Product = require("../models/product");
 const OrderItem = require("../models/orderitem");
 const Cart = require("../models/cart"); 
 
-
-// Cart ↔ User
-User.hasMany(Cart, { foreignKey: 'userId', onDelete: 'CASCADE' });
-Cart.belongsTo(User, { foreignKey: 'userId', onDelete: 'CASCADE' });
-
-// Cart ↔ Product
-Product.hasMany(Cart, { foreignKey: 'productId', onDelete: 'CASCADE' });
-Cart.belongsTo(Product, { foreignKey: 'productId',  onDelete: 'CASCADE' });
-
+Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product', onDelete: 'CASCADE' });
+Product.hasMany(Cart, { foreignKey: 'productId', as: 'carts', onDelete: 'CASCADE' });
 
 // User ↔ Orders (client)
 User.hasMany(Order, { foreignKey: "userId", as: "orders", onDelete: "CASCADE" });
