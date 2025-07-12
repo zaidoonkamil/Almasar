@@ -259,7 +259,17 @@ router.get("/cart/:userId", async (req, res) => {
       }
     });
 
-    res.status(200).json(cartItems);
+    const fixedCartItems = cartItems.map(item => {
+  const json = item.toJSON();
+  if (json.product) {
+    json.Product = json.product;
+    delete json.product;
+  }
+  return json;
+});
+
+
+    res.status(200).json(fixedCartItems);
   } catch (err) {
     console.error("Error fetching cart:", err);
     res.status(500).json({ error: "خطأ أثناء جلب السلة" });
