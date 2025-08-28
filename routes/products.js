@@ -59,7 +59,7 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
 router.get("/vendor/:vendorId/products/search", async (req, res) => {
   try {
     const { vendorId } = req.params;
-    const { title, page = 1, limit = 10 } = req.query;
+    const { title, page = 1, limit = 60 } = req.query;
 
     if (!title) {
       return res.status(400).json({ message: "يرجى إدخال كلمة البحث" });
