@@ -47,6 +47,7 @@ const sendNotificationToRole = async (role, message, title = "Notification") => 
     const devices = await UserDevice.findAll({
       include: [{
         model: User,
+        as: "user",
         where: { role }
       }]
     });
@@ -87,6 +88,7 @@ const sendNotificationToNonAdmin = async (message, title = "إعلان جديد"
     const devices = await UserDevice.findAll({
       include: [{
         model: User,
+        as: "user",
         where: {
           role: { [require('sequelize').Op.not]: 'admin' }
         }
