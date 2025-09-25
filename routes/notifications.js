@@ -61,6 +61,7 @@ router.post('/send-notification-to-role', upload.none(), async (req, res) => {
     const devices = await UserDevice.findAll({
       include: [{
         model: User,
+        as: "user",
         where: { role: role }
       }]
     });
