@@ -105,15 +105,8 @@ router.get("/admin/returned-or-exchanged-orders", async (req, res) => {
 
 router.get("/admin/order-pending", async (req, res) => {
   try {
-    await Order.destroy({
-      where: {
-        [Op.or]: [
-          { vendorId: null },
-          { productId: null }
-        ]
-      }
-    });
-    
+   
+
     const orders = await Order.findAll({
       where: {
         status: "تم الاستلام",
