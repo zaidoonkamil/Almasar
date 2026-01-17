@@ -34,7 +34,7 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
   try {
     const { vendorId } = req.params;
     const page = parseInt(req.query.page) || 1; 
-    const limit = parseInt(req.query.limit) || 60; 
+    const limit = parseInt(req.query.limit) || 15; 
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Product.findAndCountAll({

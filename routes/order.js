@@ -401,7 +401,7 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
 router.get("/vendor/:vendorId/orders", async (req, res) => {
   const { vendorId } = req.params;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 20;
   const offset = (page - 1) * limit;
 
   try {
