@@ -29,69 +29,6 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-router.get('/fix-foreign-keys', async (req, res) => {
-  try {
-    const tablesToFix = [
-      { table: 'user_devices', column: 'user_id', constraintName: 'fk_user_devices_user_id' },
-      { table: 'carts', column: 'userId', constraintName: 'fk_carts_userId' },
-    ];
-
-    for (const { table, column, constraintName } of tablesToFix) {
-      const [constraints] = await sequelize.query(`
-        SELECT tc.constraint_name
-        FROM information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-          ON tc.constraint_name = kcu.constraint_name
-          AND tc.table_schema = kcu.table_schema
-        WHERE tc.table_schema = DATABASE()
-          AND tc.table_name = '${table}'
-          AND tc.constraint_type = 'FOREIGN KEY'
-          AND kcu.column_name = '${column}'
-          AND kcu.referenced_table_name = 'Users'
-        LIMIT 1;
-      `);
-
-      if (constraints.length > 0 && constraints[0].constraint_name) {
-        const existingConstraint = constraints[0].constraint_name;
-
-        await sequelize.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${existingConstraint}\`;`);
-        console.log(`✅ Dropped FK ${existingConstraint} on table ${table}`);
-      } else {
-        console.log(`⚠️ No existing FK on ${table}.${column} to drop`);
-      }
-
-      const [existingNew] = await sequelize.query(`
-        SELECT CONSTRAINT_NAME 
-        FROM information_schema.table_constraints 
-        WHERE table_schema = DATABASE()
-          AND table_name = '${table}'
-          AND CONSTRAINT_NAME = '${constraintName}'
-      `);
-
-      if (existingNew.length === 0) {
-        await sequelize.query(`
-          ALTER TABLE \`${table}\`
-          ADD CONSTRAINT \`${constraintName}\`
-          FOREIGN KEY (\`${column}\`) REFERENCES \`Users\`(id)
-          ON DELETE CASCADE
-          ON UPDATE CASCADE;
-        `);
-        console.log(`✅ Added FK ${constraintName} on table ${table}`);
-      } else {
-        console.log(`⚠️ FK ${constraintName} already exists on ${table}`);
-      }
-    }
-
-    res.json({ message: "✅ All foreign keys fixed successfully." });
-
-  } catch (error) {
-    console.error("❌ Error fixing foreign keys:", error);
-    res.status(500).json({ error: "Failed to fix foreign keys", details: error.message });
-  }
-});
-
-
-
 router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
 
@@ -121,7 +58,6 @@ router.get("/verify-token", (req, res) => {
       return res.json({ valid: false, message: "Invalid token" });
     }
 
-    // التوكن صالح
     return res.json({ valid: true, data: decoded });
   });
 });
