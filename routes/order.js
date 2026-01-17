@@ -70,7 +70,7 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
   const deliveryId = req.params.id;
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 20;
   const offset = (page - 1) * limit;
 
   try {
