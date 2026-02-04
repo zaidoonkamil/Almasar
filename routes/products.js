@@ -55,6 +55,56 @@ router.get("/vendor/:vendorId/products", async (req, res) => {
   }
 });
 
+// تعديل منتج (تفاصيل + صور اختياري)
+router.put( "/vendor/:vendorId/products/:productId",upload.array("images", 5), async (req, res) => {
+    try {
+      const { vendorId, productId } = req.params;
+      const { title, description, price, removeImages } = req.body;
+
+      const product = await Product.findOne({
+        where: { id: productId, vendorId },
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      if (title !== undefined) product.title = title;
+      if (description !== undefined) product.description = description;
+      if (price !== undefined) product.price = price;
+
+      if (removeImages) {
+        let arr = removeImages;
+        if (typeof removeImages === "string") {
+          try {
+            arr = JSON.parse(removeImages);
+          } catch (e) {
+            arr = [removeImages];
+          }
+        }
+        if (Array.isArray(arr)) {
+          product.images = (product.images || []).filter((img) => !arr.includes(img));
+        }
+      }
+
+      if (req.files && req.files.length > 0) {
+        const newImages = req.files.map((f) => f.filename);
+        product.images = [...(product.images || []), ...newImages];
+      }
+
+      await product.save();
+
+      return res.status(200).json({
+        message: "Product updated successfully",
+        product,
+      });
+    } catch (err) {
+      console.error("Error updating product:", err);
+      res.status(500).json({ message: "Error updating product", error: err });
+    }
+  }
+);
+
 // البحث عن منتج لدى تاجر معين
 router.get("/vendor/:vendorId/products/search", async (req, res) => {
   try {
