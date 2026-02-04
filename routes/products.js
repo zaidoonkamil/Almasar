@@ -161,6 +161,52 @@ router.get("/vendorbysponsored", async (req, res) => {
   }
 });
 
+router.get("/vendor-search", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const search = req.query.search || "";
+
+    const sponsoredVendors = await User.findAll({
+      where: {
+        role: "vendor",
+        sponsorshipAmount: { [Op.gt]: 0 },
+        name: { [Op.like]: `%${search}%` } 
+      },
+      attributes: { exclude: ["password"] },
+      order: [["sponsorshipAmount", "DESC"]],
+    });
+
+    const randomVendors = await User.findAll({
+      where: {
+        role: "vendor",
+        sponsorshipAmount: 0,
+        name: { [Op.like]: `%${search}%` }
+      },
+      attributes: { exclude: ["password"] },
+      order: sequelize.literal("RAND()"),
+    });
+
+    const allVendors = [...sponsoredVendors, ...randomVendors];
+
+    const paginatedVendors = allVendors.slice(offset, offset + limit);
+
+    res.status(200).json({
+      data: paginatedVendors,
+      pagination: {
+        totalItems: allVendors.length,
+        totalPages: Math.ceil(allVendors.length / limit),
+        currentPage: page,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Error searching vendor users:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // تعديل مبلغ الرعاية (sponsorshipAmount) لتاجر معين
 router.put("/vendor/:vendorId/sponsorship", upload.none(), async (req, res) => {
   try {
