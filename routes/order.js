@@ -147,6 +147,7 @@ router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
           },
           required: false
         },
+        { model: User, as: "vendor", attributes: { exclude: ["password"] } },
         {
           model: OrderItem,
           as: "items",

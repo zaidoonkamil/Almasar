@@ -8,6 +8,9 @@ const Product = require("../models/product");
 const OrderItem = require("../models/orderitem");
 const Cart = require("../models/cart"); 
 
+User.hasMany(Order, { foreignKey: "vendorId", as: "vendorOrders", onDelete: 'CASCADE' });
+Order.belongsTo(User, { foreignKey: "vendorId", as: "vendor", onDelete: 'CASCADE' });
+
 Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product', onDelete: 'CASCADE' });
 Product.hasMany(Cart, { foreignKey: 'productId', as: 'carts', onDelete: 'CASCADE' });
 
