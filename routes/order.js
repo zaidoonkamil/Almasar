@@ -75,18 +75,35 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
 
   try {
     const { count, rows: orders } = await Order.findAndCountAll({
-      where: { assignedDeliveryId: deliveryId },
+      where: {
+        assignedDeliveryId: deliveryId
+      },
       include: [
         {
           model: OrderItem,
           as: "items",
-          include: [{ model: Product, attributes: ["id", "title", "price", "images"] }]
+          include: [
+            {
+              model: Product,
+              attributes: ["id", "title", "price", "images"]
+            }
+          ]
         },
-        { model: OrderStatusHistory, as: "statusHistory" },
-        { model: User, as: "vendor", attributes: { exclude: ["password"] } },
-        { model: User, as: "user", attributes: { exclude: ["password"] } },
-        { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] },
-        { model: DeliveryRating, as: "rating" }
+        {
+          model: OrderStatusHistory,
+          as: "statusHistory",
+          order: [["createdAt", "DESC"]]
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: { exclude: ['password'] }
+        },
+        {
+          model: User,
+          as: "delivery",
+          attributes: ["id", "name", "phone", "location", "createdAt"]
+        }
       ],
       order: [["createdAt", "DESC"]],
       limit,
@@ -94,12 +111,8 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const o = order.toJSON();
-      return {
-        ...o,
-        items: Array.isArray(o.items) ? o.items : [],
-        // delivery: o.delivery ?? { id: 0, name:"", phone:"", location:"", createdAt:null },
-      };
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
     });
 
     res.status(200).json({
@@ -153,11 +166,8 @@ router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const o = order.toJSON();
-      return {
-        ...o,
-        items: Array.isArray(o.items) ? o.items : [],
-      };
+      const items = order.items && order.items.length > 0 ? order.items : null;
+      return { ...order.toJSON(), items };
     });
 
     res.status(200).json(formattedOrders);

@@ -105,42 +105,26 @@ router.get("/admin/returned-or-exchanged-orders", async (req, res) => {
 
 router.get("/admin/order-pending", async (req, res) => {
   try {
-  /*  await Order.destroy({
-      where: {
-        [Op.or]: [
-          { vendorId: null },
-          { productId: null }
-        ]
-      }
-    });
- */   
     const orders = await Order.findAll({
       where: {
         status: "تم الاستلام",
-        [Op.or]: [
-          { assignedDeliveryId: null },
-          { assignedDeliveryId: 0 }
-        ]
+        [Op.or]: [{ assignedDeliveryId: null }, { assignedDeliveryId: 0 }]
       },
       include: [
         {
           model: OrderStatusHistory,
           as: "statusHistory",
-          where: {
-            status: "مرفوض"
-          },
+          where: { status: "مرفوض" },
           required: false
         },
         {
           model: OrderItem,
           as: "items",
-          include: [
-            {
-              model: Product,
-              attributes: ["id", "title", "price", "images"]
-            }
-          ]
+          include: [{ model: Product, attributes: ["id", "title", "price", "images"] }]
         },
+
+        { model: User, as: "vendor", attributes: { exclude: ['password'] } },
+
         { model: User, as: "user", attributes: { exclude: ['password'] } },
         { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
@@ -148,12 +132,18 @@ router.get("/admin/order-pending", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = order.items && order.items.length > 0 ? order.items : null;
-      return { ...order.toJSON(), items };
+      const o = order.toJSON();
+
+      return {
+        ...o,
+        items: Array.isArray(o.items) ? o.items : [],
+        vendor: o.vendor ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        delivery: o.delivery ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        statusHistory: Array.isArray(o.statusHistory) ? o.statusHistory : [],
+      };
     });
 
     res.status(200).json(formattedOrders);
-
   } catch (err) {
     console.error("❌ Error fetching selected orders:", err);
     res.status(500).json({ error: "Internal Server Error" });
