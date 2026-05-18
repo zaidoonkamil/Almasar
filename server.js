@@ -33,6 +33,6 @@ app.use("/", productsRoutes);
 app.use("/", notifications);
 
 
-app.listen(3000, () => {
-    console.log("Server is running on port https://168.231.111.44:3000");
+app.listen(1010, () => {
+    console.log("Server is running on port https://168.231.111.44:1010");
 });
