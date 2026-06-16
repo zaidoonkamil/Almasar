@@ -169,11 +169,20 @@ router.get("/vendorbysponsored", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const category = req.query.category;
+
+    const whereClause = {
+      role: "vendor"
+    };
+
+    if (category && category !== "الكل") {
+      whereClause.category = category;
+    }
 
     // التجار الموصى بهم (اللي عندهم قيمة > 0)
     const sponsoredVendors = await User.findAll({
       where: {
-        role: "vendor",
+        ...whereClause,
         sponsorshipAmount: { [Op.gt]: 0 }
       },
       attributes: { exclude: ['password'] },
@@ -183,7 +192,7 @@ router.get("/vendorbysponsored", async (req, res) => {
     // باقي التجار (عشوائيين)
     const randomVendors = await User.findAll({
       where: {
-        role: "vendor",
+        ...whereClause,
         sponsorshipAmount: 0
       },
       attributes: { exclude: ['password'] },
@@ -218,12 +227,21 @@ router.get("/vendor-search", async (req, res) => {
     const offset = (page - 1) * limit;
 
     const search = req.query.search || "";
+    const category = req.query.category;
+
+    const whereClause = {
+      role: "vendor",
+      name: { [Op.like]: `%${search}%` }
+    };
+
+    if (category && category !== "الكل") {
+      whereClause.category = category;
+    }
 
     const sponsoredVendors = await User.findAll({
       where: {
-        role: "vendor",
-        sponsorshipAmount: { [Op.gt]: 0 },
-        name: { [Op.like]: `%${search}%` } 
+        ...whereClause,
+        sponsorshipAmount: { [Op.gt]: 0 }
       },
       attributes: { exclude: ["password"] },
       order: [["sponsorshipAmount", "DESC"]],
@@ -231,9 +249,8 @@ router.get("/vendor-search", async (req, res) => {
 
     const randomVendors = await User.findAll({
       where: {
-        role: "vendor",
-        sponsorshipAmount: 0,
-        name: { [Op.like]: `%${search}%` }
+        ...whereClause,
+        sponsorshipAmount: 0
       },
       attributes: { exclude: ["password"] },
       order: sequelize.literal("RAND()"),

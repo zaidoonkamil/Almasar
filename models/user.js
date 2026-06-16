@@ -40,6 +40,10 @@ const User = sequelize.define("User", {
         type: DataTypes.ENUM("user",  "vendor", "admin", "delivery"), 
         allowNull: false,
         defaultValue: "user",
+    },
+    category: {
+        type: DataTypes.STRING,
+        allowNull: true,
     }
 }, {
     timestamps: true,

@@ -63,7 +63,7 @@ router.get("/verify-token", (req, res) => {
 });
 
 router.post("/users", upload.array("images",5),async (req, res) => {
-    const { name, phone , location ,password , role = 'user'} = req.body;
+    const { name, phone , location ,password , role = 'user', category} = req.body;
 
     try {
         const existingUser = await User.findOne({ where: { phone } });
@@ -80,7 +80,7 @@ router.post("/users", upload.array("images",5),async (req, res) => {
         }
     
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        const user = await User.create({ name, phone, location, password: hashedPassword, role, images });
+        const user = await User.create({ name, phone, location, password: hashedPassword, role, images, category });
 
         res.status(201).json({
         id: user.id,
@@ -89,6 +89,7 @@ router.post("/users", upload.array("images",5),async (req, res) => {
         location: user.location,
         role: role,
         images: images,
+        category: user.category,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
      });
