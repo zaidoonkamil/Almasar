@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/user');
 const Governorate = require('../models/governorate');
+const DeliveryRating = require('../models/delivery_rating');
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const router = express.Router();
@@ -208,12 +209,32 @@ router.get("/usersDelivery", async (req, res) => {
         const deliveryUsers = await User.findAll({
             where: { role: "delivery" },
             attributes: { exclude: ['password'] },
-         });
+        });
 
-        res.status(200).json(deliveryUsers);
+        const deliveryWithRatings = await Promise.all(
+            deliveryUsers.map(async (delivery) => {
+                const ratings = await DeliveryRating.findAll({
+                    where: { deliveryId: delivery.id },
+                    attributes: ["rating"],
+                });
+
+                const count = ratings.length;
+                const average = count > 0 
+                    ? ratings.reduce((sum, r) => sum + r.rating, 0) / count 
+                    : 0;
+
+                return {
+                    ...delivery.toJSON(),
+                    ratingAverage: parseFloat(average.toFixed(1)),
+                    ratingCount: count,
+                };
+            })
+        );
+
+        res.status(200).json(deliveryWithRatings);
 
     } catch (err) {
-        console.error("❌ Error fetching delivery users:", err);
+        console.error("❌ Error fetching delivery users with ratings:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });

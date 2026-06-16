@@ -56,6 +56,14 @@ const Order = sequelize.define("Order", {
        type: DataTypes.TEXT,
        allowNull: true
     },
+    latitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true
+    },
+    longitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true
+    },
     
 }, {
     timestamps: true,

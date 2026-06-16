@@ -180,7 +180,7 @@ router.get("/delivery/:id/firststatus-orders-delivery", async (req, res) => {
 
 
 router.post("/orders", upload.none(), async (req, res) => {
-    const { address, phone, orderAmount, deliveryFee, notes, userId } = req.body;
+    const { address, phone, orderAmount, deliveryFee, notes, userId, latitude, longitude } = req.body;
     const nowPlus3Hours = new Date(Date.now() + 3 * 60 * 60 * 1000);
 
     try {
@@ -191,6 +191,8 @@ router.post("/orders", upload.none(), async (req, res) => {
             orderAmount,
             deliveryFee,
             notes,
+            latitude: latitude ? parseFloat(latitude) : null,
+            longitude: longitude ? parseFloat(longitude) : null,
             createdAt: nowPlus3Hours,
         });
 
@@ -304,6 +306,15 @@ router.get("/orders/:userId", async (req, res) => {
           model: User,
           as: "vendor",
           attributes: ["id", "name", "phone", "location"]
+        },
+        {
+          model: User,
+          as: "delivery",
+          attributes: ["id", "name", "phone", "images"]
+        },
+        {
+          model: DeliveryRating,
+          as: "rating"
         }
       ],
       order: [["createdAt", "DESC"]],
@@ -333,7 +344,7 @@ router.get("/orders/:userId", async (req, res) => {
 
 // إنشاء مجموعة من الطلبات من تاجر
 router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
-  const { address, phone, notes, products, userId } = req.body;
+  const { address, phone, notes, products, userId, latitude, longitude } = req.body;
   const { vendorId } = req.params;
   const nowPlus3Hours = new Date(Date.now() + 3 * 60 * 60 * 1000);
   try {
@@ -372,6 +383,8 @@ router.post("/vendor/:vendorId/orders", upload.none(), async (req, res) => {
       orderAmount: totalAmount,
       deliveryFee: 0,
       notes,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
       createdAt: nowPlus3Hours,
     });
 
