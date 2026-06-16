@@ -28,6 +28,7 @@ router.get("/admin/all-orders", async (req, res) => {
           ]
         },
         { model: OrderStatusHistory, as: "statusHistory", order: [["createdAt", "DESC"]] },
+        { model: User, as: "vendor", attributes: { exclude: ['password'] } },
         { model: User, as: "user", attributes: { exclude: ['password'] } },
         { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
@@ -37,8 +38,15 @@ router.get("/admin/all-orders", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = order.items && order.items.length > 0 ? order.items : null;
-      return { ...order.toJSON(), items };
+      const o = order.toJSON();
+      const items = o.items && o.items.length > 0 ? o.items : null;
+      return {
+        ...o,
+        items,
+        vendor: o.vendor ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        delivery: o.delivery ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        statusHistory: Array.isArray(o.statusHistory) ? o.statusHistory : [],
+      };
     });
 
     res.status(200).json({
@@ -76,6 +84,7 @@ router.get("/admin/returned-or-exchanged-orders", async (req, res) => {
           ]
         },
         { model: OrderStatusHistory, as: "statusHistory", order: [["createdAt", "DESC"]] },
+        { model: User, as: "vendor", attributes: { exclude: ['password'] } },
         { model: User, as: "user", attributes: { exclude: ['password'] } },
         { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
@@ -85,8 +94,15 @@ router.get("/admin/returned-or-exchanged-orders", async (req, res) => {
     });
 
     const formattedOrders = orders.map(order => {
-      const items = order.items && order.items.length > 0 ? order.items : null;
-      return { ...order.toJSON(), items };
+      const o = order.toJSON();
+      const items = o.items && o.items.length > 0 ? o.items : null;
+      return {
+        ...o,
+        items,
+        vendor: o.vendor ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        delivery: o.delivery ?? { id: 0, name: "", phone: "", location: "", createdAt: null },
+        statusHistory: Array.isArray(o.statusHistory) ? o.statusHistory : [],
+      };
     });
 
     res.status(200).json({

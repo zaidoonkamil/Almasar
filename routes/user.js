@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/user');
+const Governorate = require('../models/governorate');
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const router = express.Router();
@@ -62,8 +63,18 @@ router.get("/verify-token", (req, res) => {
   });
 });
 
+router.get("/governorates", async (req, res) => {
+    try {
+        const governorates = await Governorate.findAll({ where: { isActive: true } });
+        res.status(200).json(governorates);
+    } catch (err) {
+        console.error("❌ Error fetching governorates:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 router.post("/users", upload.array("images",5),async (req, res) => {
-    const { name, phone , location ,password , role = 'user', category} = req.body;
+    const { name, phone , location ,password , role = 'user', category, governorate} = req.body;
 
     try {
         const existingUser = await User.findOne({ where: { phone } });
@@ -79,8 +90,14 @@ router.post("/users", upload.array("images",5),async (req, res) => {
             return res.status(400).json({ error: "Phone number must be 11 digits" });
         }
     
+        const governorateValue = governorate || "صلاح الدين";
+        const activeGov = await Governorate.findOne({ where: { name: governorateValue, isActive: true } });
+        if (!activeGov) {
+            return res.status(400).json({ error: "الخدمة غير متوفرة في هذه المحافظة حالياً" });
+        }
+
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        const user = await User.create({ name, phone, location, password: hashedPassword, role, images, category });
+        const user = await User.create({ name, phone, location, password: hashedPassword, role, images, category, governorate: governorateValue });
 
         res.status(201).json({
         id: user.id,
@@ -90,6 +107,7 @@ router.post("/users", upload.array("images",5),async (req, res) => {
         role: role,
         images: images,
         category: user.category,
+        governorate: user.governorate,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
      });
@@ -246,6 +264,59 @@ router.get("/usersvendor", async (req, res) => {
   }
 });
 
+router.post("/users/:id/update", authenticateToken, upload.array("images", 1), async (req, res) => {
+    const { id } = req.params;
+    const { name, phone } = req.body;
 
+    if (req.user.id !== parseInt(id) && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Access denied, you are not authorized to update this user's data" });
+    }
+
+    try {
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (phone && phone !== user.phone) {
+            const existingUser = await User.findOne({ where: { phone } });
+            if (existingUser) {
+                return res.status(400).json({ error: "رقم الهاتف مستخدم بالفعل" });
+            }
+            if (phone.length !== 11) {
+                return res.status(400).json({ error: "رقم الهاتف يجب أن يكون مكوناً من 11 رقماً" });
+            }
+            user.phone = phone;
+        }
+
+        if (name) {
+            user.name = name;
+        }
+
+        if (req.files && req.files.length > 0) {
+            user.images = req.files.map(file => file.filename);
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: {
+                id: user.id,
+                name: user.name,
+                phone: user.phone,
+                location: user.location,
+                role: user.role,
+                images: user.images,
+                governorate: user.governorate,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            }
+        });
+    } catch (err) {
+        console.error("❌ Error updating profile:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 module.exports = router;

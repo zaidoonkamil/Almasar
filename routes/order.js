@@ -299,6 +299,11 @@ router.get("/orders/:userId", async (req, res) => {
           model: OrderStatusHistory,
           as: "statusHistory",
           order: [['createdAt', 'DESC']]
+        },
+        {
+          model: User,
+          as: "vendor",
+          attributes: ["id", "name", "phone", "location"]
         }
       ],
       order: [["createdAt", "DESC"]],

@@ -1,5 +1,6 @@
 const express = require("express");
 const sequelize = require("./config/db");
+const Governorate = require("./models/governorate");
 const usersRouter = require("./routes/user");
 const adsRoutes = require("./routes/ads");
 const orderRoutes = require("./routes/order");

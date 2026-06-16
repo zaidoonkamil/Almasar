@@ -44,6 +44,10 @@ const User = sequelize.define("User", {
     category: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    governorate: {
+        type: DataTypes.STRING,
+        allowNull: true,
     }
 }, {
     timestamps: true,
