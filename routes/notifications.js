@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const router = express.Router();
-const { sendNotification } = require('../services/notifications');
+const { sendNotification, sendNotificationToUser } = require('../services/notifications');
 const multer = require("multer");
 const upload = multer();
 const UserDevice = require("../models/user_device");
@@ -128,6 +128,20 @@ router.get('/notification/:userId', async (req, res) => {
   }
 });
 
+router.post('/send-notification-to-user', async (req, res) => {
+  const { userId, title, message } = req.body;
 
+  if (!userId || !message) {
+    return res.status(400).json({ error: 'userId و message مطلوبان' });
+  }
+
+  try {
+    const result = await sendNotificationToUser(userId, message, title || 'إشعار جديد');
+    return res.json(result);
+  } catch (error) {
+    console.error(`❌ Error in /send-notification-to-user:`, error.message);
+    return res.status(500).json({ error: 'حدث خطأ أثناء إرسال الإشعار' });
+  }
+});
 
 module.exports = router;
