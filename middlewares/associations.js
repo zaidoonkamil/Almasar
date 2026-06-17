@@ -5,8 +5,9 @@ const OrderStatusHistory = require("../models/orderStatusHistory");
 const UserDevice = require('../models/user_device.js'); 
 const Notification = require("../models/notification");
 const Product = require("../models/product");
-const OrderItem = require("../models/orderitem");
 const Cart = require("../models/cart"); 
+const ChatMessage = require("../models/chat_message");
+const OrderItem = require("../models/orderitem");
 
 User.hasMany(Order, { foreignKey: "vendorId", as: "vendorOrders", onDelete: 'CASCADE' });
 Order.belongsTo(User, { foreignKey: "vendorId", as: "vendor", onDelete: 'CASCADE' });
@@ -49,6 +50,16 @@ Product.hasMany(OrderItem, { foreignKey: "productId", onDelete: "CASCADE" });
 User.hasMany(UserDevice, { foreignKey: "user_id", as: "devices", onDelete: "CASCADE" });
 UserDevice.belongsTo(User, { foreignKey: "user_id", as: "user", onDelete: "CASCADE" });
 
+// ChatMessage associations
+Order.hasMany(ChatMessage, { foreignKey: "orderId", as: "chatMessages", onDelete: "CASCADE" });
+ChatMessage.belongsTo(Order, { foreignKey: "orderId", as: "order", onDelete: "CASCADE" });
+
+User.hasMany(ChatMessage, { foreignKey: "senderId", as: "sentMessages", onDelete: "CASCADE" });
+ChatMessage.belongsTo(User, { foreignKey: "senderId", as: "sender", onDelete: "CASCADE" });
+
+User.hasMany(ChatMessage, { foreignKey: "receiverId", as: "receivedMessages", onDelete: "CASCADE" });
+ChatMessage.belongsTo(User, { foreignKey: "receiverId", as: "receiver", onDelete: "CASCADE" });
+
 
 module.exports = {
   User,
@@ -59,5 +70,6 @@ module.exports = {
   DeliveryRating,
   OrderItem,
   Notification,
-  Cart
+  Cart,
+  ChatMessage
 };

@@ -101,6 +101,11 @@ router.get("/delivery/:id/all-orders-delivery", async (req, res) => {
         },
         {
           model: User,
+          as: "vendor",
+          attributes: ["id", "name", "phone", "location", "images"]
+        },
+        {
+          model: User,
           as: "delivery",
           attributes: ["id", "name", "phone", "location", "createdAt"]
         }
@@ -446,6 +451,11 @@ router.get("/vendor/:vendorId/orders", async (req, res) => {
           model: User,
           as: "user", 
           attributes: ["id", "name", "phone"]
+        },
+        {
+          model: User,
+          as: "delivery",
+          attributes: ["id", "name", "phone", "images"]
         },
         {
           model: OrderStatusHistory,

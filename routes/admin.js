@@ -14,8 +14,46 @@ router.get("/admin/all-orders", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const offset = (page - 1) * limit;
+    const { search, status, sortBy } = req.query;
+
+    const where = {};
+
+    if (status && status !== "الكل") {
+      where.status = status;
+    }
+
+    if (search && search.trim() !== "") {
+      const searchVal = `%${search.trim()}%`;
+      const isNumeric = !isNaN(search.trim());
+      const orConditions = [
+        { phone: { [Op.like]: searchVal } },
+        { address: { [Op.like]: searchVal } },
+        { '$user.name$': { [Op.like]: searchVal } },
+        { '$user.phone$': { [Op.like]: searchVal } },
+        { '$vendor.name$': { [Op.like]: searchVal } },
+        { '$delivery.name$': { [Op.like]: searchVal } }
+      ];
+
+      if (isNumeric) {
+        orConditions.push({ id: parseInt(search.trim()) });
+      }
+
+      where[Op.or] = orConditions;
+    }
+
+    let dbOrder = [["createdAt", "DESC"]];
+    if (sortBy === "date_asc") {
+      dbOrder = [["createdAt", "ASC"]];
+    } else if (sortBy === "date_desc") {
+      dbOrder = [["createdAt", "DESC"]];
+    } else if (sortBy === "amount_asc") {
+      dbOrder = [["orderAmount", "ASC"]];
+    } else if (sortBy === "amount_desc") {
+      dbOrder = [["orderAmount", "DESC"]];
+    }
 
     const { count, rows: orders } = await Order.findAndCountAll({
+      where,
       include: [
         {
           model: OrderItem,
@@ -32,9 +70,10 @@ router.get("/admin/all-orders", async (req, res) => {
         { model: User, as: "user", attributes: { exclude: ['password'] } },
         { model: User, as: "delivery", attributes: ["id", "name", "phone", "location", "createdAt"] }
       ],
-      order: [["createdAt", "DESC"]],
+      order: dbOrder,
       limit,
-      offset
+      offset,
+      subQuery: false
     });
 
     const formattedOrders = orders.map(order => {
